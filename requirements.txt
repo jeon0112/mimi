@@ -1,5 +1,5 @@
 anthropic>=0.105.0
-pykrx>=1.2.8
+pykrx==1.0.47
 pandas>=2.0.0
 numpy>=1.24.0
 matplotlib>=3.7.0
