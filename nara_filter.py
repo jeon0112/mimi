@@ -140,7 +140,7 @@ def run_filter_pipeline(days: int = 3) -> None:
             icon = "✅" if status == "추천" else ("⚠️" if status == "보류" else "❌")
             print(f"\n{icon} [{status}] {bid['공고명']}")
             print(f"   발주기관: {bid['발주기관']}")
-            print(f"   추정가격: {bid.get('추정가격', 0):,}원")
+            print(f"   추정가격: {bid.get('추정가격', 0)}원")
             print(f"   점수: {score}/100 | {reason}")
             print(f"   URL: {bid['공고URL']}")
 
