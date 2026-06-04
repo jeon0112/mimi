@@ -35,17 +35,24 @@ def quick_filter(bids: list) -> list:
 
 
 def ai_evaluate_bids(bids: list) -> list:
-    """Claude Sonnet으로 공고 적격 판단"""
+    """Claude Sonnet으로 공고 적격 판단 (20건씩 배치 처리)"""
     if not bids:
         return []
 
-    bid_text = "\n".join([
-        f"{i+1}. [{bid['공고번호']}] {bid['공고명']} | {bid['발주기관']} | "
-        f"추정가: {bid.get('추정가격', 0)}원 | 계약방법: {bid.get('계약방법', '')}"
-        for i, bid in enumerate(bids)
-    ])
+    all_results = []
+    batch_size = 20
 
-    prompt = f"""당신은 나라장터 입찰 전문가입니다. 아래 회사 프로필을 보고 각 공고의 입찰 적격 여부를 판단하세요.
+    for i in range(0, len(bids), batch_size):
+        batch = bids[i:i + batch_size]
+        print(f"  배치 {i//batch_size + 1}/{(len(bids)-1)//batch_size + 1} 판단 중... ({len(batch)}건)")
+
+        bid_text = "\n".join([
+            f"{j+1}. [{bid['공고번호']}] {bid['공고명']} | {bid['발주기관']} | "
+            f"추정가: {bid.get('추정가격', 0)}원 | 계약방법: {bid.get('계약방법', '')}"
+            for j, bid in enumerate(batch)
+        ])
+
+        prompt = f"""당신은 나라장터 입찰 전문가입니다. 아래 회사 프로필을 보고 각 공고의 입찰 적격 여부를 판단하세요.
 
 ## 회사 프로필
 {COMPANY_PROFILE}
@@ -54,40 +61,39 @@ def ai_evaluate_bids(bids: list) -> list:
 {bid_text}
 
 ## 지시사항
-각 공고에 대해 다음 형식으로 JSON 배열로 응답하세요:
+각 공고에 대해 다음 형식으로 JSON 배열만 응답하세요 (다른 텍스트 없이):
 [
   {{
-    "번호": 1,
     "공고번호": "...",
     "추천여부": "추천" 또는 "보류" 또는 "제외",
     "점수": 0~100,
     "이유": "한 줄 이유"
-  }},
-  ...
+  }}
 ]
 
 추천 기준:
-- 업종 일치 여부
+- 업종 일치 여부 (사무소모품, 생활위생용품, 생필품, 판촉물품)
 - 금액 적정성 (100만~5000만원 선호)
 - 장애인기업/사회적기업 우대 가능성
 - 수의계약 해당 여부 (2000만원 이하)
 """
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
+        try:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=4096,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = response.content[0].text
+            start = text.find("[")
+            end = text.rfind("]") + 1
+            results = json.loads(text[start:end])
+            all_results.extend(results)
+        except Exception as e:
+            print(f"  배치 파싱 오류: {e}")
+            continue
 
-    text = response.content[0].text
-    try:
-        start = text.find("[")
-        end = text.rfind("]") + 1
-        results = json.loads(text[start:end])
-        return results
-    except Exception:
-        print("AI 응답 파싱 오류")
-        return []
+    return all_results
 
 
 def run_filter_pipeline(days: int = 3) -> None:
