@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("NARA_API_KEY")
-BASE_URL = "http://apis.data.go.kr/1230000/BidPublicInfoService04"
+BASE_URL = "http://apis.data.go.kr/1230000/BidPublicInfoService05"
 
 
 def get_today():
@@ -43,7 +43,7 @@ def fetch_bid_list(keyword: str = "", days: int = 3, max_results: int = 100) -> 
         params["bidNtceNm"] = keyword
 
     try:
-        url = f"{BASE_URL}/getBidPblancListInfoThng04"
+        url = f"{BASE_URL}/getBidPblancListInfoThng05"
         response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
         data = response.json()
