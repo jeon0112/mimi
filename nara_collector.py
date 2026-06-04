@@ -88,7 +88,8 @@ def parse_bid_item(item: dict) -> dict:
 def collect_bids(keywords: list = None, days: int = 3) -> list:
     """키워드 목록으로 공고 수집"""
     if keywords is None:
-        keywords = ["A4용지", "복사용지", "토너", "화장지", "세정제", "방역", "생필품", "판촉"]
+        keywords = ["A4용지", "복사용지", "토너", "화장지", "세정제", "방역", "생필품", "판촉",
+                    "에어컨세척", "에어컨 세척", "냉방기세척", "공조기세척", "냉난방기세척"]
 
     all_bids = []
     seen = set()
