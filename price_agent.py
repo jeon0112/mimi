@@ -44,29 +44,46 @@ def search_price(keyword: str, display: int = 5) -> list:
         return []
 
 
-def get_min_price(keyword: str) -> dict:
-    """최저가 및 평균가 반환"""
-    items = search_price(keyword)
+def get_min_price(keyword: str, min_threshold: int = 1000) -> dict:
+    """최저가 및 평균가 반환 (비정상 저가 필터링)"""
+    items = search_price(keyword, display=10)
     if not items:
         return {"keyword": keyword, "min_price": None, "avg_price": None, "title": ""}
 
     prices = []
+    titles = []
     for item in items:
         try:
             price = int(item.get("lprice", 0))
-            if price > 0:
+            if price >= min_threshold:
                 prices.append(price)
+                titles.append(item.get("title", "").replace("<b>", "").replace("</b>", ""))
         except Exception:
             continue
 
     if not prices:
-        return {"keyword": keyword, "min_price": None, "avg_price": None, "title": ""}
+        # 임계값 미달 시 전체 중 최저가 반환
+        all_prices = [int(item.get("lprice", 0)) for item in items if item.get("lprice", 0)]
+        if not all_prices:
+            return {"keyword": keyword, "min_price": None, "avg_price": None, "title": ""}
+        return {
+            "keyword": keyword,
+            "min_price": min(all_prices),
+            "avg_price": int(sum(all_prices) / len(all_prices)),
+            "title": items[0].get("title", "").replace("<b>", "").replace("</b>", ""),
+        }
+
+    # 상위 30% 이상치 제거 후 중앙값 사용
+    sorted_prices = sorted(prices)
+    trim = max(1, len(sorted_prices) * 3 // 10)
+    trimmed = sorted_prices[:len(sorted_prices) - trim] if len(sorted_prices) > 3 else sorted_prices
+    representative_price = sorted_prices[len(sorted_prices) // 3]  # 하위 1/3 지점 가격
 
     return {
         "keyword": keyword,
-        "min_price": min(prices),
-        "avg_price": int(sum(prices) / len(prices)),
-        "title": items[0].get("title", "").replace("<b>", "").replace("</b>", ""),
+        "min_price": representative_price,
+        "avg_price": int(sum(trimmed) / len(trimmed)),
+        "title": titles[len(titles) // 3] if titles else "",
     }
 
 
