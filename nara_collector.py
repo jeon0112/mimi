@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("NARA_API_KEY")
-BASE_URL = "http://apis.data.go.kr/1230000/BidPublicInfoService05"
+BASE_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService"
 
 
 def get_today():
@@ -43,7 +43,7 @@ def fetch_bid_list(keyword: str = "", days: int = 3, max_results: int = 100) -> 
         params["bidNtceNm"] = keyword
 
     try:
-        url = f"{BASE_URL}/getBidPblancListInfoThng05"
+        url = f"{BASE_URL}/getBidPblancListInfoThng"
         response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
         data = response.json()
@@ -59,8 +59,11 @@ def fetch_bid_list(keyword: str = "", days: int = 3, max_results: int = 100) -> 
 
         return items or []
 
+    except requests.exceptions.HTTPError as e:
+        print(f"API 오류 ({e.response.status_code}): {e.response.text[:300]}")
+        return []
     except requests.exceptions.RequestException as e:
-        print(f"API 요청 오류: {e}")
+        print(f"네트워크 오류: {e}")
         return []
     except Exception as e:
         print(f"오류: {e}")
