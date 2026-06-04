@@ -41,7 +41,7 @@ def ai_evaluate_bids(bids: list) -> list:
 
     bid_text = "\n".join([
         f"{i+1}. [{bid['공고번호']}] {bid['공고명']} | {bid['발주기관']} | "
-        f"추정가: {bid.get('추정가격', 0):,}원 | 계약방법: {bid.get('계약방법', '')}"
+        f"추정가: {bid.get('추정가격', 0)}원 | 계약방법: {bid.get('계약방법', '')}"
         for i, bid in enumerate(bids)
     ])
 
