@@ -17,11 +17,12 @@ DELIVERY_COST = 3000
 
 # 품목 키워드별 최소 합리적 가격 (원)
 CATEGORY_MIN_PRICES = {
-    "마우스": 5000, "키보드": 8000, "공유기": 15000, "허브": 8000,
-    "스피커": 8000, "케이블": 3000, "커넥터": 5000, "모니터": 50000,
-    "토너": 8000, "드럼": 15000, "폐토너": 5000, "잉크": 5000,
-    "태블릿": 30000, "펜슬": 10000, "노트북": 300000, "컴퓨터": 100000,
-    "USB": 3000, "SSD": 30000, "메모리": 10000,
+    "마우스": 8000, "키보드": 10000, "공유기": 25000, "허브": 20000,
+    "스피커": 12000, "UTP": 20000, "케이블": 10000, "커넥터": 8000,
+    "모니터": 50000, "토너": 8000, "드럼": 15000, "폐토너": 8000,
+    "잉크": 5000, "태블릿": 30000, "펜슬": 10000, "노트북": 300000,
+    "컴퓨터": 100000, "USB허브": 8000, "SSD": 30000, "메모리": 10000,
+    "헤드셋": 10000, "iptime": 20000,
 }
 
 
@@ -103,8 +104,8 @@ def get_price(keyword: str, fallback_keyword: str = None) -> dict:
         items = search_price(fallback_keyword)
         prices, titles = extract_prices(items, cat_min)
 
-    # 그래도 없으면 임계값 낮춰서 전체 재시도
-    if not prices and items:
+    # 카테고리 최솟값이 기본값(500)인 경우에만 전체 결과로 fallback
+    if not prices and items and cat_min <= 500:
         all_prices = [int(i.get("lprice", 0)) for i in items if i.get("lprice", 0)]
         all_titles = [i.get("title", "").replace("<b>", "").replace("</b>", "") for i in items]
         if all_prices:
