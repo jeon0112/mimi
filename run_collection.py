@@ -3,6 +3,11 @@
 import os
 import sys
 import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from datetime import datetime
 
 # 출력 폴더: GitHub Actions면 output/, 로컬이면 바탕화면\나라장터결과
@@ -86,11 +91,15 @@ def main():
             xlsx_path = json_to_excel(json_path)
             log(f"엑셀 저장: {xlsx_path}")
 
+                # 이메일 발송
+            send_email(recommended, held, xlsx_path)
+
             # 로컬에서는 자동으로 열기
             if not IS_GITHUB and sys.platform == "win32":
                 os.startfile(xlsx_path)
         else:
             log("오늘 추천/보류 공고 없음")
+            send_email([], [], None)
 
         # 6. 요약 출력
         log("\n[추천 공고 요약]")
@@ -106,6 +115,67 @@ def main():
         import traceback
         log(traceback.format_exc())
         sys.exit(1)
+
+
+def send_email(recommended: list, held: list, xlsx_path: str) -> None:
+    gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
+    gmail_password = os.getenv("GMAIL_PASSWORD", "")
+    to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
+
+    if not gmail_password:
+        log("이메일 비밀번호 미설정, 발송 건너뜀")
+        return
+
+    date_str = datetime.now().strftime("%Y년 %m월 %d일")
+    subject = f"[나라장터] {date_str} 추천공고 {len(recommended)}건 / 보류 {len(held)}건"
+
+    body_lines = [
+        f"안녕하세요, 오늘의 나라장터 공고 결과입니다.\n",
+        f"📋 추천: {len(recommended)}건 | 보류: {len(held)}건\n",
+    ]
+
+    if recommended:
+        body_lines.append("\n✅ [추천 공고]\n")
+        for bid in recommended:
+            eval_info = bid.get("평가", {})
+            body_lines.append(f"• {bid['공고명']}")
+            body_lines.append(f"  발주기관: {bid['발주기관']}")
+            body_lines.append(f"  추정가격: {bid.get('추정가격', 0):,}원")
+            body_lines.append(f"  마감: {bid.get('입찰마감일시', '')}")
+            body_lines.append(f"  AI점수: {eval_info.get('점수', 0)}점 - {eval_info.get('이유', '')}")
+            body_lines.append(f"  URL: {bid.get('공고URL', '')}\n")
+
+    if held:
+        body_lines.append("\n⏸ [보류 공고]\n")
+        for bid in held:
+            body_lines.append(f"• {bid['공고명']} ({bid['발주기관']})")
+
+    if not recommended and not held:
+        body_lines.append("\n오늘은 해당 공고가 없습니다.")
+
+    body = "\n".join(body_lines)
+
+    msg = MIMEMultipart()
+    msg["From"] = gmail_user
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    if xlsx_path and os.path.exists(xlsx_path):
+        with open(xlsx_path, "rb") as f:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(f.read())
+        encoders.encode_base64(part)
+        part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(xlsx_path)}")
+        msg.attach(part)
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(gmail_user, gmail_password)
+            server.sendmail(gmail_user, to_email, msg.as_string())
+        log(f"이메일 발송 완료 → {to_email}")
+    except Exception as e:
+        log(f"이메일 발송 실패: {e}")
 
 
 if __name__ == "__main__":
