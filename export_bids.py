@@ -105,7 +105,8 @@ if __name__ == "__main__":
                 shutil.copy2(out, dest)
                 print(f"📁 바탕화면 저장: {dest}")
                 out = dest
-            # 자동으로 열기
-            os.startfile(out)
+            # 자동으로 열기 (Windows만)
+            if sys.platform == "win32":
+                os.startfile(out)
         else:
             print("recommended_bids_*.json 파일을 찾을 수 없습니다.")
