@@ -14,7 +14,11 @@ load_dotenv()
 SCHEDULE_HOUR = 8       # 매일 오전 8시 실행
 SCHEDULE_MINUTE = 0
 COLLECT_DAYS = 1        # 최근 1일치 공고 수집 (매일 실행 시)
-LOG_FILE = "scheduler.log"
+
+# 결과 저장 폴더 (바탕화면\나라장터결과)
+OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Desktop", "나라장터결과")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+LOG_FILE = os.path.join(OUTPUT_DIR, "scheduler.log")
 
 
 def log(msg: str) -> None:
@@ -69,8 +73,14 @@ def run_daily_collection() -> None:
         # 5. 결과 저장
         date_str = datetime.now().strftime("%Y%m%d")
         if recommended:
-            filename = save_to_json(recommended, f"recommended_bids_{date_str}.json")
+            json_path = os.path.join(OUTPUT_DIR, f"recommended_bids_{date_str}.json")
+            filename = save_to_json(recommended, json_path)
             log(f"추천 공고 저장: {filename}")
+
+            # 엑셀 변환
+            from export_bids import json_to_excel
+            xlsx_path = json_to_excel(json_path)
+            log(f"엑셀 저장: {xlsx_path}")
             send_notification(recommended)
         else:
             log("오늘 추천 공고 없음")

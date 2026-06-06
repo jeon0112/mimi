@@ -112,10 +112,14 @@ def generate_proposal(bid_info: dict) -> str:
 
 def save_proposal(proposal_text: str, bid_info: dict) -> str:
     """기술제안서를 텍스트 파일로 저장"""
+    output_dir = os.path.join(os.path.expanduser("~"), "Desktop", "나라장터결과")
+    os.makedirs(output_dir, exist_ok=True)
+
     bid_name = bid_info.get("공고명", "제안서")[:20]
     date_str = datetime.now().strftime("%Y%m%d_%H%M")
     filename = f"제안서_{bid_name}_{date_str}.txt"
     filename = filename.replace("/", "_").replace("\\", "_").replace(":", "_")
+    filename = os.path.join(output_dir, filename)
 
     header = f"""================================================================
   기 술 제 안 서

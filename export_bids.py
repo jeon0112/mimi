@@ -83,12 +83,30 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
-        json_to_excel(sys.argv[1])
+        out = json_to_excel(sys.argv[1])
     else:
-        # 가장 최근 recommended_bids JSON 자동 선택
-        files = sorted(glob.glob("recommended_bids_*.json"), reverse=True)
-        if files:
-            print(f"파일 발견: {files[0]}")
-            json_to_excel(files[0])
+        # 바탕화면\나라장터결과 폴더 우선, 없으면 현재 폴더
+        output_dir = os.path.join(os.path.expanduser("~"), "Desktop", "나라장터결과")
+        search_dirs = [output_dir, "."]
+        found = None
+        for d in search_dirs:
+            files = sorted(glob.glob(os.path.join(d, "recommended_bids_*.json")), reverse=True)
+            if files:
+                found = files[0]
+                break
+        if found:
+            print(f"파일 발견: {found}")
+            out = json_to_excel(found)
+            # 바탕화면 폴더에 없으면 복사
+            os.makedirs(output_dir, exist_ok=True)
+            dest = os.path.join(output_dir, os.path.basename(out))
+            if os.path.abspath(out) != os.path.abspath(dest):
+                import shutil
+                shutil.copy2(out, dest)
+                print(f"📁 바탕화면 저장: {dest}")
+                out = dest
+            # 자동으로 열기 (Windows만)
+            if sys.platform == "win32":
+                os.startfile(out)
         else:
             print("recommended_bids_*.json 파일을 찾을 수 없습니다.")
