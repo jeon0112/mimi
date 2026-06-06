@@ -124,8 +124,21 @@ def main():
                 except Exception as e:
                     log(f"제안서 모듈 오류: {e}")
 
+            # 필살기 4종 전략 실행
+            strategy_results = {}
+            letter_files = []
+            try:
+                from winning_strategy import run_winning_strategy, format_strategy_email
+                strategy_results = run_winning_strategy(recommended, held, OUTPUT_DIR)
+                letter_files = strategy_results.get("공문파일", [])
+                strategy_summary = format_strategy_email(strategy_results)
+                log(strategy_summary)
+            except Exception as e:
+                log(f"전략 분석 오류: {e}")
+
             # 이메일 발송
-            send_email(recommended, held, xlsx_path, proposal_files, bid_analysis)
+            send_email(recommended, held, xlsx_path,
+                      proposal_files + letter_files, bid_analysis, strategy_results)
 
             # 로컬에서는 자동으로 열기
             if not IS_GITHUB and sys.platform == "win32":
@@ -150,7 +163,7 @@ def main():
         sys.exit(1)
 
 
-def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None, bid_analysis: dict = None) -> None:
+def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None, bid_analysis: dict = None, strategy_results: dict = None) -> None:
     gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
     gmail_password = os.getenv("GMAIL_PASSWORD", "")
     to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
@@ -198,6 +211,19 @@ def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: li
 
     if not recommended and not held:
         body_lines.append("\n오늘은 해당 공고가 없습니다.")
+
+    # 전략 요약 추가
+    if strategy_results:
+        urgent = strategy_results.get("마감임박공고", [])
+        patterns = strategy_results.get("기관별패턴", {})
+        if urgent:
+            body_lines.append("\n⚡ [마감 임박 단독 기회]")
+            for b in urgent[:3]:
+                body_lines.append(f"  • {b['공고명'][:35]} (D-{b['남은일수']})")
+        if patterns:
+            body_lines.append("\n📊 [기관별 최적 낙찰률]")
+            for agency, p in patterns.items():
+                body_lines.append(f"  • {agency}: {p['추천낙찰률']}%")
 
     body = "\n".join(body_lines)
 
