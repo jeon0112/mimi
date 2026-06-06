@@ -92,7 +92,7 @@ def pick_representative(prices: list, titles: list) -> tuple[int, str]:
 
 
 def get_price(keyword: str, fallback_keyword: str = None) -> dict:
-    """가격 조회 - 이상 시 키워드 단순화해서 재시도"""
+    """가격 조회 - 이상 시 키워드 단순화해서 재시도. 상위 업체 목록도 반환."""
     cat_min = get_category_min(keyword)
     items = search_price(keyword)
 
@@ -112,10 +112,28 @@ def get_price(keyword: str, fallback_keyword: str = None) -> dict:
             prices, titles = all_prices, all_titles
 
     if not prices:
-        return {"min_price": None, "title": ""}
+        return {"min_price": None, "title": "", "suppliers": []}
 
     rep_price, rep_title = pick_representative(prices, titles)
-    return {"min_price": rep_price, "title": rep_title[:40]}
+
+    # 상위 공급업체 3곳 추출 (가격 낮은 순, cat_min 이상인 것)
+    valid_items = []
+    for item in items:
+        try:
+            p = int(item.get("lprice", 0))
+            if p >= cat_min:
+                valid_items.append({
+                    "mallName": item.get("mallName", "").replace("<b>", "").replace("</b>", ""),
+                    "price": p,
+                    "title": item.get("title", "").replace("<b>", "").replace("</b>", "")[:35],
+                    "link": item.get("link", ""),
+                })
+        except Exception:
+            continue
+    valid_items.sort(key=lambda x: x["price"])
+    top_suppliers = valid_items[:3]
+
+    return {"min_price": rep_price, "title": rep_title[:40], "suppliers": top_suppliers}
 
 
 def calculate_bid_price(cost_price: int, margin: float = DEFAULT_MARGIN) -> int:
