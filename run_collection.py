@@ -91,6 +91,22 @@ def main():
             xlsx_path = json_to_excel(json_path)
             log(f"엑셀 저장: {xlsx_path}")
 
+            # 추천 공고 입찰가 분석
+            bid_analysis = {}
+            if recommended:
+                log("입찰가 분석 중...")
+                try:
+                    from bid_analyzer import analyze_bid
+                    for bid in recommended:
+                        result = analyze_bid(bid)
+                        bid_analysis[bid.get("공고번호", "")] = result.get("입찰가추천", {})
+                        rec = result.get("입찰가추천", {})
+                        if rec:
+                            log(f"  [{bid['공고명'][:25]}]")
+                            log(f"    안정형: {rec.get('안정형입찰가', 0):,}원 | 중간형: {rec.get('중간형입찰가', 0):,}원 | 공격형: {rec.get('공격형입찰가', 0):,}원")
+                except Exception as e:
+                    log(f"입찰가 분석 오류: {e}")
+
             # 추천 공고 제안서 자동 생성 (네이버 API 있을 때만)
             proposal_files = []
             if recommended and os.getenv("NAVER_CLIENT_ID"):
@@ -109,7 +125,7 @@ def main():
                     log(f"제안서 모듈 오류: {e}")
 
             # 이메일 발송
-            send_email(recommended, held, xlsx_path, proposal_files)
+            send_email(recommended, held, xlsx_path, proposal_files, bid_analysis)
 
             # 로컬에서는 자동으로 열기
             if not IS_GITHUB and sys.platform == "win32":
@@ -134,7 +150,7 @@ def main():
         sys.exit(1)
 
 
-def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None) -> None:
+def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None, bid_analysis: dict = None) -> None:
     gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
     gmail_password = os.getenv("GMAIL_PASSWORD", "")
     to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
@@ -165,6 +181,14 @@ def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: li
             body_lines.append(f"  추정가격: {price_str}원")
             body_lines.append(f"  마감: {bid.get('입찰마감일시', '')}")
             body_lines.append(f"  AI점수: {eval_info.get('점수', 0)}점 - {eval_info.get('이유', '')}")
+            # 입찰가 추천 정보 추가
+            rec = (bid_analysis or {}).get(bid.get("공고번호", ""), {})
+            if rec:
+                body_lines.append(f"  💰 입찰가 추천:")
+                body_lines.append(f"     안정형: {rec.get('안정형입찰가', 0):,}원")
+                body_lines.append(f"     중간형: {rec.get('중간형입찰가', 0):,}원")
+                body_lines.append(f"     공격형: {rec.get('공격형입찰가', 0):,}원")
+                body_lines.append(f"     근거: {rec.get('근거', '')}")
             body_lines.append(f"  URL: {bid.get('공고URL', '')}\n")
 
     if held:
