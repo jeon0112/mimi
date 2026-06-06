@@ -38,7 +38,7 @@ def main():
 
     try:
         from nara_collector import collect_bids, save_to_json
-        from nara_filter import quick_filter, ai_evaluate_bids
+        from nara_filter import quick_filter, ai_evaluate_bids, ai_detailed_check
         from export_bids import json_to_excel
 
         # 1. 공고 수집
@@ -91,6 +91,23 @@ def main():
             xlsx_path = json_to_excel(json_path)
             log(f"엑셀 저장: {xlsx_path}")
 
+            # 추천 공고 세밀 점검
+            detailed_checks = {}
+            if recommended:
+                log("추천 공고 세밀 점검 중...")
+                try:
+                    detailed_checks = ai_detailed_check(recommended)
+                    for bid in recommended:
+                        chk = detailed_checks.get(bid.get("공고번호", ""), {})
+                        if chk:
+                            issues = [c for c in chk.get("체크리스트", [])
+                                      if "⚠️" in c.get("상태", "") or "❌" in c.get("상태", "")]
+                            log(f"  [{bid['공고명'][:25]}] {chk.get('최종권고','?')} / 주의:{len(issues)}건")
+                except Exception as e:
+                    log(f"세밀 점검 오류: {e}")
+                    import traceback
+                    log(traceback.format_exc())
+
             # 추천 공고 입찰가 분석
             bid_analysis = {}
             if recommended:
@@ -142,7 +159,7 @@ def main():
 
             # 이메일 발송
             send_email(recommended, held, xlsx_path,
-                      proposal_files + letter_files, bid_analysis, strategy_results)
+                      proposal_files + letter_files, bid_analysis, strategy_results, detailed_checks)
 
             # 로컬에서는 자동으로 열기
             if not IS_GITHUB and sys.platform == "win32":
@@ -167,7 +184,7 @@ def main():
         sys.exit(1)
 
 
-def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None, bid_analysis: dict = None, strategy_results: dict = None) -> None:
+def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None, bid_analysis: dict = None, strategy_results: dict = None, detailed_checks: dict = None) -> None:
     gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
     gmail_password = os.getenv("GMAIL_PASSWORD", "")
     to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
@@ -206,6 +223,15 @@ def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: li
                 body_lines.append(f"     중간형: {rec.get('중간형입찰가', 0):,}원")
                 body_lines.append(f"     공격형: {rec.get('공격형입찰가', 0):,}원")
                 body_lines.append(f"     근거: {rec.get('근거', '')}")
+            # 세밀 점검 결과
+            chk = (detailed_checks or {}).get(bid.get("공고번호", ""), {})
+            if chk:
+                body_lines.append(f"  🔍 세밀 점검 [{chk.get('최종권고','?')}]")
+                for item in chk.get("체크리스트", []):
+                    body_lines.append(f"    {item['상태']} {item['항목']}: {item['설명']}")
+                if chk.get("주의사항"):
+                    body_lines.append(f"  ⚠️  주의: {' / '.join(chk['주의사항'][:2])}")
+                body_lines.append(f"  💡 전략: {chk.get('입찰전략', '')}")
             body_lines.append(f"  URL: {bid.get('공고URL', '')}\n")
 
     if held:
