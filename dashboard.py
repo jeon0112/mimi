@@ -22,7 +22,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-OUTPUT_DIR = "output"
+IS_GITHUB = os.getenv("GITHUB_ACTIONS") == "true"
+if IS_GITHUB:
+    OUTPUT_DIR = "output"
+else:
+    OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Desktop", "나라장터결과")
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ─────────────────────────────────────────────
