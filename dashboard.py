@@ -300,7 +300,7 @@ elif page == "🚀 수동 실행":
                 result = subprocess.run(
                     ["python", "run_collection.py"],
                     capture_output=True, text=True, timeout=600,
-                    cwd="/home/user/mimi"
+                    cwd=os.path.dirname(os.path.abspath(__file__))
                 )
                 st.session_state.log_output = result.stdout + ("\n[STDERR]\n" + result.stderr if result.stderr else "")
                 st.session_state.running = False
