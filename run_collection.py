@@ -140,7 +140,12 @@ def send_email(recommended: list, held: list, xlsx_path: str) -> None:
             eval_info = bid.get("평가", {})
             body_lines.append(f"• {bid['공고명']}")
             body_lines.append(f"  발주기관: {bid['발주기관']}")
-            body_lines.append(f"  추정가격: {bid.get('추정가격', 0):,}원")
+            price = bid.get('추정가격', 0)
+            try:
+                price_str = f"{int(price):,}"
+            except (ValueError, TypeError):
+                price_str = str(price)
+            body_lines.append(f"  추정가격: {price_str}원")
             body_lines.append(f"  마감: {bid.get('입찰마감일시', '')}")
             body_lines.append(f"  AI점수: {eval_info.get('점수', 0)}점 - {eval_info.get('이유', '')}")
             body_lines.append(f"  URL: {bid.get('공고URL', '')}\n")
