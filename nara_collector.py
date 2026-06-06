@@ -81,7 +81,7 @@ def parse_bid_item(item: dict) -> dict:
         "추정가격": item.get("asignBdgtAmt", 0),
         "계약방법": item.get("cntrctMthd", ""),
         "입찰방식": item.get("bidMthdNm", ""),
-        "공고URL": f"https://www.g2b.go.kr:8081/ep/invitation/publish/bidInvitDtlPublish.do?bidno={item.get('bidNtceNo', '')}&bidseq=00",
+        "공고URL": f"https://www.g2b.go.kr/ep/invitation/publish/bidInvitDtlPublish.do?bidno={item.get('bidNtceNo', '')}&bidseq=00",
     }
 
 
