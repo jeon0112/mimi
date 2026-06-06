@@ -303,8 +303,9 @@ elif page == "🚀 수동 실행":
         with st.spinner("실행 중... (2~5분 소요)"):
             try:
                 result = subprocess.run(
-                    ["python", "run_collection.py"],
+                    ["python", "-X", "utf8", "run_collection.py"],
                     capture_output=True, text=True, timeout=600,
+                    encoding="utf-8", errors="replace",
                     cwd=os.path.dirname(os.path.abspath(__file__))
                 )
                 st.session_state.log_output = (result.stdout or "") + ("\n[STDERR]\n" + result.stderr if result.stderr else "")
