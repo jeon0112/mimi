@@ -106,6 +106,8 @@ def main():
                             log(f"    안정형: {rec.get('안정형입찰가', 0):,}원 | 중간형: {rec.get('중간형입찰가', 0):,}원 | 공격형: {rec.get('공격형입찰가', 0):,}원")
                 except Exception as e:
                     log(f"입찰가 분석 오류: {e}")
+                    import traceback
+                    log(traceback.format_exc())
 
             # 추천 공고 제안서 자동 생성 (네이버 API 있을 때만)
             proposal_files = []
@@ -135,6 +137,8 @@ def main():
                 log(strategy_summary)
             except Exception as e:
                 log(f"전략 분석 오류: {e}")
+                import traceback
+                log(traceback.format_exc())
 
             # 이메일 발송
             send_email(recommended, held, xlsx_path,

@@ -107,7 +107,13 @@ def generate_contact_letters(recommended: list, output_dir: str) -> list:
         seen_agencies.add(agency)
 
         print(f"  공문 생성: {agency}")
-        letter = generate_contact_letter(agency, bid)
+        try:
+            letter = generate_contact_letter(agency, bid)
+        except Exception as e:
+            print(f"  공문 생성 오류 ({agency}): {e}")
+            import traceback
+            traceback.print_exc()
+            continue
 
         date_str = datetime.now().strftime("%Y%m%d")
         filename = f"공문_{agency}_{date_str}.txt".replace("/", "_")
