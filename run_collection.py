@@ -91,8 +91,25 @@ def main():
             xlsx_path = json_to_excel(json_path)
             log(f"엑셀 저장: {xlsx_path}")
 
-                # 이메일 발송
-            send_email(recommended, held, xlsx_path)
+            # 추천 공고 제안서 자동 생성 (네이버 API 있을 때만)
+            proposal_files = []
+            if recommended and os.getenv("NAVER_CLIENT_ID"):
+                log("기술제안서 자동 생성 중...")
+                try:
+                    from proposal_pipeline import run_pipeline
+                    proposal_dir = os.path.join(OUTPUT_DIR, "제안서")
+                    for bid in recommended:
+                        try:
+                            path = run_pipeline(bid, proposal_dir)
+                            proposal_files.append(path)
+                            log(f"제안서 생성: {os.path.basename(path)}")
+                        except Exception as e:
+                            log(f"제안서 오류 ({bid.get('공고명', '')[:20]}): {e}")
+                except Exception as e:
+                    log(f"제안서 모듈 오류: {e}")
+
+            # 이메일 발송
+            send_email(recommended, held, xlsx_path, proposal_files)
 
             # 로컬에서는 자동으로 열기
             if not IS_GITHUB and sys.platform == "win32":
@@ -117,7 +134,7 @@ def main():
         sys.exit(1)
 
 
-def send_email(recommended: list, held: list, xlsx_path: str) -> None:
+def send_email(recommended: list, held: list, xlsx_path: str, proposal_files: list = None) -> None:
     gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
     gmail_password = os.getenv("GMAIL_PASSWORD", "")
     to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
@@ -173,6 +190,17 @@ def send_email(recommended: list, held: list, xlsx_path: str) -> None:
         encoders.encode_base64(part)
         part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(xlsx_path)}")
         msg.attach(part)
+
+    # 제안서 파일 첨부
+    for pfile in (proposal_files or []):
+        if pfile and os.path.exists(pfile):
+            with open(pfile, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+            fname = os.path.basename(pfile)
+            part.add_header("Content-Disposition", f"attachment; filename=\"{fname}\"")
+            msg.attach(part)
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
