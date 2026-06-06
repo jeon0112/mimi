@@ -4,6 +4,11 @@ import os
 import sys
 import json
 import smtplib
+
+# Windows에서 이모지 출력 시 cp949 오류 방지
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -26,7 +31,7 @@ LOG_FILE = os.path.join(OUTPUT_DIR, f"log_{datetime.now().strftime('%Y%m%d')}.tx
 def log(msg: str) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{timestamp}] {msg}"
-    print(line)
+    print(line, flush=True)
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(line + "\n")
 
