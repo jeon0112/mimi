@@ -207,6 +207,7 @@ def get_review_count(product_id: str) -> dict:
 def get_review_counts_bulk(product_ids: list[str], delay: float = 0.3) -> list[dict]:
     """여러 상품의 리뷰수를 순차 조회. delay로 요청 간격 조절."""
     results = []
+
     for pid in product_ids:
         results.append(get_review_count(pid))
         time.sleep(delay)
@@ -267,6 +268,94 @@ try:
         if len(product_ids) > 50:
             raise HTTPException(status_code=400, detail="한 번에 최대 50개까지 가능합니다.")
         return get_review_counts_bulk(product_ids, delay=delay)
+
+    @app.get("/summary")
+    def api_summary(
+        keyword: str = Query(..., description="검색어"),
+        display: int = Query(100, ge=1, le=100, description="통계 대상 상품 수"),
+        min_price: int = Query(0, ge=0, description="최소 가격 필터"),
+        outlier_filter: bool = Query(False, description="IQR 기반 이상값 제거"),
+    ):
+        """키워드 검색 결과의 가격 통계 (min/max/avg/p25/p75) 반환."""
+        try:
+            result = search(keyword, display=display, sort="sim")
+        except (RuntimeError, requests.HTTPError) as e:
+            raise HTTPException(status_code=502, detail=str(e))
+
+        prices = [item["price"] for item in result["items"] if item["price"] >= min_price]
+        if not prices:
+            raise HTTPException(status_code=404, detail="가격 데이터 없음")
+
+        prices.sort()
+        n = len(prices)
+
+        def percentile(data, pct):
+            idx = (len(data) - 1) * pct / 100
+            lo, hi = int(idx), min(int(idx) + 1, len(data) - 1)
+            return round(data[lo] + (data[hi] - data[lo]) * (idx - lo))
+
+        p25 = percentile(prices, 25)
+        p75 = percentile(prices, 75)
+
+        if outlier_filter:
+            iqr = p75 - p25
+            low_fence = p25 - 1.5 * iqr
+            high_fence = p75 + 1.5 * iqr
+            prices = [p for p in prices if low_fence <= p <= high_fence]
+
+        if not prices:
+            raise HTTPException(status_code=404, detail="이상값 제거 후 데이터 없음")
+
+        return {
+            "keyword": keyword,
+            "sample_count": len(prices),
+            "outlier_filter": outlier_filter,
+            "min": prices[0],
+            "max": prices[-1],
+            "avg": round(sum(prices) / len(prices)),
+            "p25": percentile(prices, 25),
+            "median": percentile(prices, 50),
+            "p75": percentile(prices, 75),
+        }
+
+    @app.get("/suppliers")
+    def api_suppliers(
+        keyword: str = Query(..., description="검색어"),
+        n: int = Query(5, ge=1, le=20, description="반환할 공급업체 수"),
+        min_price: int = Query(0, ge=0, description="최소 가격 필터"),
+    ):
+        """최저가 공급업체 목록 반환 (가격 오름차순 상위 N개)."""
+        try:
+            result = search(keyword, display=100, sort="asc")
+        except (RuntimeError, requests.HTTPError) as e:
+            raise HTTPException(status_code=502, detail=str(e))
+
+        items = [
+            item for item in result["items"]
+            if item["price"] >= min_price and item["mall"]
+        ]
+
+        seen_malls = set()
+        suppliers = []
+        for item in items:
+            if item["mall"] not in seen_malls:
+                seen_malls.add(item["mall"])
+                suppliers.append({
+                    "rank": len(suppliers) + 1,
+                    "mall": item["mall"],
+                    "title": item["title"],
+                    "price": item["price"],
+                    "link": item["link"],
+                    "image": item["image"],
+                })
+            if len(suppliers) >= n:
+                break
+
+        return {
+            "keyword": keyword,
+            "count": len(suppliers),
+            "suppliers": suppliers,
+        }
 
     @app.get("/health")
     def health():
