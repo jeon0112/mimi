@@ -203,7 +203,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Claude 응답 파싱\nconst aiResponse = $('Claude AI 호출').first().json;\nconst aiRaw = aiResponse?.content?.[0]?.text || '';\nconst classified = $('수의계약 분류').first().json;\nconst bidAnalysis = $('낙찰가 분석').first().json?.낙찰이력분석;\n\nlet aiResults = [];\ntry {\n  const match = aiRaw.match(/\\[.*\\]/s);\n  if (match) aiResults = JSON.parse(match[0]);\n} catch(e) {}\n\nconst aiMap = {};\naiResults.forEach(r => { aiMap[r.공고번호] = r; });\n\nconst enriched = classified.all.map(it => ({\n  ...it,\n  AI추천: aiMap[it.공고번호]?.추천여부 || '미분석',\n  AI점수: aiMap[it.공고번호]?.점수 || 0,\n  AI이유: aiMap[it.공고번호]?.이유 || ''\n}));\n\nconst 추천 = enriched.filter(it => it.AI추천 === '추천').sort((a,b) => b.AI점수 - a.AI점수);\nconst 보류 = enriched.filter(it => it.AI추천 === '보류');\nconst 수의 = enriched.filter(it => it.수의계약가능);\n\nreturn [{ json: { 추천, 보류, 수의, 낙찰이력분석: bidAnalysis, totalCount: enriched.length } }];"
+        "jsCode": "// Claude 응답 파싱\nconst aiResponse = $input.first().json;\nconst aiRaw = aiResponse?.content?.[0]?.text || '';\nconst classified = $('수의계약 분류').first().json;\n\nlet aiResults = [];\ntry {\n  const match = aiRaw.match(/\\[.*\\]/s);\n  if (match) aiResults = JSON.parse(match[0]);\n} catch(e) {}\n\nconst aiMap = {};\naiResults.forEach(r => { aiMap[r.공고번호] = r; });\n\nconst enriched = classified.all.map(it => ({\n  ...it,\n  AI추천: aiMap[it.공고번호]?.추천여부 || '미분석',\n  AI점수: aiMap[it.공고번호]?.점수 || 0,\n  AI이유: aiMap[it.공고번호]?.이유 || ''\n}));\n\nconst 추천 = enriched.filter(it => it.AI추천 === '추천').sort((a,b) => b.AI점수 - a.AI점수);\nconst 보류 = enriched.filter(it => it.AI추천 === '보류');\nconst 수의 = enriched.filter(it => it.수의계약가능);\n\nreturn [{ json: { 추천, 보류, 수의, 낙찰이력분석: null, totalCount: enriched.length } }];"
       },
       "id": "node-combine",
       "name": "결과 통합",
@@ -276,8 +276,7 @@
     },
     "수의계약 분류": {
       "main": [[
-        { "node": "AI 프롬프트 준비", "type": "main", "index": 0 },
-        { "node": "낙찰 이력 조회", "type": "main", "index": 0 }
+        { "node": "AI 프롬프트 준비", "type": "main", "index": 0 }
       ]]
     },
     "AI 프롬프트 준비": {
@@ -285,12 +284,6 @@
     },
     "Claude AI 호출": {
       "main": [[{ "node": "결과 통합", "type": "main", "index": 0 }]]
-    },
-    "낙찰 이력 조회": {
-      "main": [[{ "node": "낙찰가 분석", "type": "main", "index": 0 }]]
-    },
-    "낙찰가 분석": {
-      "main": [[{ "node": "결과 통합", "type": "main", "index": 1 }]]
     },
     "결과 통합": {
       "main": [[{ "node": "이메일 HTML 완성", "type": "main", "index": 0 }]]
