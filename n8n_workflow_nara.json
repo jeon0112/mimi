@@ -30,7 +30,7 @@
     },
     {
       "parameters": {
-        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch",
+        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -53,7 +53,7 @@
     },
     {
       "parameters": {
-        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoThngPPSSrch",
+        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoThng",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -76,7 +76,7 @@
     },
     {
       "parameters": {
-        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoCnstwkPPSSrch",
+        "url": "http://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoCnstwk",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
