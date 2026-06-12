@@ -16,7 +16,10 @@
       "name": "매일 KST 08:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -26,7 +29,10 @@
       "name": "검색 조건 설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 0]
+      "position": [
+        220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -34,22 +40,48 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "serviceKey", "value": "여기에_나라장터_인증키_입력" },
-            { "name": "pageNo", "value": "1" },
-            { "name": "numOfRows", "value": "100" },
-            { "name": "inqryDiv", "value": "1" },
-            { "name": "inqryBgnDt", "value": "={{ $json.inqryBgnDt }}" },
-            { "name": "inqryEndDt", "value": "={{ $json.inqryEndDt }}" },
-            { "name": "type", "value": "json" }
+            {
+              "name": "serviceKey",
+              "value": "여기에_나라장터_인증키_입력"
+            },
+            {
+              "name": "pageNo",
+              "value": "1"
+            },
+            {
+              "name": "numOfRows",
+              "value": "100"
+            },
+            {
+              "name": "inqryDiv",
+              "value": "1"
+            },
+            {
+              "name": "inqryBgnDt",
+              "value": "={{ $json.inqryBgnDt }}"
+            },
+            {
+              "name": "inqryEndDt",
+              "value": "={{ $json.inqryEndDt }}"
+            },
+            {
+              "name": "type",
+              "value": "json"
+            }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "node-api-service",
       "name": "용역 공고 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, -150]
+      "position": [
+        440,
+        -150
+      ]
     },
     {
       "parameters": {
@@ -57,22 +89,48 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "serviceKey", "value": "여기에_나라장터_인증키_입력" },
-            { "name": "pageNo", "value": "1" },
-            { "name": "numOfRows", "value": "100" },
-            { "name": "inqryDiv", "value": "1" },
-            { "name": "inqryBgnDt", "value": "={{ $('검색 조건 설정').first().json.inqryBgnDt }}" },
-            { "name": "inqryEndDt", "value": "={{ $('검색 조건 설정').first().json.inqryEndDt }}" },
-            { "name": "type", "value": "json" }
+            {
+              "name": "serviceKey",
+              "value": "여기에_나라장터_인증키_입력"
+            },
+            {
+              "name": "pageNo",
+              "value": "1"
+            },
+            {
+              "name": "numOfRows",
+              "value": "100"
+            },
+            {
+              "name": "inqryDiv",
+              "value": "1"
+            },
+            {
+              "name": "inqryBgnDt",
+              "value": "={{ $('검색 조건 설정').first().json.inqryBgnDt }}"
+            },
+            {
+              "name": "inqryEndDt",
+              "value": "={{ $('검색 조건 설정').first().json.inqryEndDt }}"
+            },
+            {
+              "name": "type",
+              "value": "json"
+            }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "node-api-goods",
       "name": "물품 공고 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 0]
+      "position": [
+        440,
+        0
+      ]
     },
     {
       "parameters": {
@@ -80,22 +138,48 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "serviceKey", "value": "여기에_나라장터_인증키_입력" },
-            { "name": "pageNo", "value": "1" },
-            { "name": "numOfRows", "value": "100" },
-            { "name": "inqryDiv", "value": "1" },
-            { "name": "inqryBgnDt", "value": "={{ $('검색 조건 설정').first().json.inqryBgnDt }}" },
-            { "name": "inqryEndDt", "value": "={{ $('검색 조건 설정').first().json.inqryEndDt }}" },
-            { "name": "type", "value": "json" }
+            {
+              "name": "serviceKey",
+              "value": "여기에_나라장터_인증키_입력"
+            },
+            {
+              "name": "pageNo",
+              "value": "1"
+            },
+            {
+              "name": "numOfRows",
+              "value": "100"
+            },
+            {
+              "name": "inqryDiv",
+              "value": "1"
+            },
+            {
+              "name": "inqryBgnDt",
+              "value": "={{ $('검색 조건 설정').first().json.inqryBgnDt }}"
+            },
+            {
+              "name": "inqryEndDt",
+              "value": "={{ $('검색 조건 설정').first().json.inqryEndDt }}"
+            },
+            {
+              "name": "type",
+              "value": "json"
+            }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "node-api-const",
       "name": "공사 공고 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 150]
+      "position": [
+        440,
+        150
+      ]
     },
     {
       "parameters": {
@@ -105,7 +189,10 @@
       "name": "병합 및 키워드 필터",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 0]
+      "position": [
+        700,
+        0
+      ]
     },
     {
       "parameters": {
@@ -114,7 +201,10 @@
             {
               "leftValue": "={{ $items().length }}",
               "rightValue": 0,
-              "operator": { "type": "number", "operation": "gt" }
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
             }
           ],
           "combinator": "and"
@@ -124,7 +214,10 @@
       "name": "매칭 공고 있음?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [920, 0]
+      "position": [
+        920,
+        0
+      ]
     },
     {
       "parameters": {
@@ -134,7 +227,10 @@
       "name": "수의계약 분류",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, -100]
+      "position": [
+        1140,
+        -100
+      ]
     },
     {
       "parameters": {
@@ -144,7 +240,10 @@
       "name": "AI 프롬프트 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, -250]
+      "position": [
+        1140,
+        -250
+      ]
     },
     {
       "parameters": {
@@ -153,21 +252,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "여기에_Anthropic_API_키_입력" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "content-type", "value": "application/json" }
+            {
+              "name": "x-api-key",
+              "value": "여기에_Anthropic_API_키_입력"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2048, messages: [{ role: 'user', content: $json.prompt }] }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "node-ai-call",
       "name": "Claude AI 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1360, -250]
+      "position": [
+        1360,
+        -250
+      ]
     },
     {
       "parameters": {
@@ -175,21 +288,44 @@
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "serviceKey", "value": "여기에_나라장터_인증키_입력" },
-            { "name": "pageNo", "value": "1" },
-            { "name": "numOfRows", "value": "50" },
-            { "name": "inqryDiv", "value": "1" },
-            { "name": "bidNtceNm", "value": "={{ $('수의계약 분류').first().json.all[0]?.공고명?.substring(0,10) || '' }}" },
-            { "name": "type", "value": "json" }
+            {
+              "name": "serviceKey",
+              "value": "여기에_나라장터_인증키_입력"
+            },
+            {
+              "name": "pageNo",
+              "value": "1"
+            },
+            {
+              "name": "numOfRows",
+              "value": "50"
+            },
+            {
+              "name": "inqryDiv",
+              "value": "1"
+            },
+            {
+              "name": "bidNtceNm",
+              "value": "={{ $('수의계약 분류').first().json.all[0]?.공고명?.substring(0,10) || '' }}"
+            },
+            {
+              "name": "type",
+              "value": "json"
+            }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "node-history",
       "name": "낙찰 이력 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1140, 100]
+      "position": [
+        1140,
+        100
+      ]
     },
     {
       "parameters": {
@@ -199,17 +335,23 @@
       "name": "낙찰가 분석",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1360, 100]
+      "position": [
+        1360,
+        100
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Claude 응답 파싱\nconst aiResponse = $input.first().json;\nconst aiRaw = aiResponse?.content?.[0]?.text || '';\nconst classified = $('수의계약 분류').first().json;\n\nlet aiResults = [];\ntry {\n  const match = aiRaw.match(/\\[.*\\]/s);\n  if (match) aiResults = JSON.parse(match[0]);\n} catch(e) {}\n\nconst aiMap = {};\naiResults.forEach(r => { aiMap[r.공고번호] = r; });\n\nconst enriched = classified.all.map(it => ({\n  ...it,\n  AI추천: aiMap[it.공고번호]?.추천여부 || '미분석',\n  AI점수: aiMap[it.공고번호]?.점수 || 0,\n  AI이유: aiMap[it.공고번호]?.이유 || ''\n}));\n\nconst 추천 = enriched.filter(it => it.AI추천 === '추천').sort((a,b) => b.AI점수 - a.AI점수);\nconst 보류 = enriched.filter(it => it.AI추천 === '보류');\nconst 수의 = enriched.filter(it => it.수의계약가능);\n\nreturn [{ json: { 추천, 보류, 수의, 낙찰이력분석: null, totalCount: enriched.length } }];"
+        "jsCode": "// Claude 응답(index 0) + 낙찰가 분석(index 1) 병합\nconst inputs = $input.all();\nconst aiResponse = inputs[0]?.json;\nconst aiRaw = aiResponse?.content?.[0]?.text || '';\nconst 낙찰이력분析 = inputs[1]?.json?.낙찰이력분析 || { 샘플수: 0 };\nconst classified = $('수의계약 분류').first().json;\n\nlet aiResults = [];\ntry {\n  const match = aiRaw.match(/\\[.*\\]/s);\n  if (match) aiResults = JSON.parse(match[0]);\n} catch(e) {}\n\nconst aiMap = {};\naiResults.forEach(r => { aiMap[r.공고번호] = r; });\n\nconst enriched = classified.all.map(it => ({\n  ...it,\n  AI추천: aiMap[it.공고번호]?.추천여부 || '미분析',\n  AI점수: aiMap[it.공고번호]?.점수 || 0,\n  AI이유: aiMap[it.공고번호]?.이유 || ''\n}));\n\nconst 추천 = enriched.filter(it => it.AI추천 === '추천').sort((a,b) => b.AI점수 - a.AI점수);\nconst 보류 = enriched.filter(it => it.AI추천 === '보류');\nconst 수의 = enriched.filter(it => it.수의계약가능);\n\nreturn [{ json: { 추천, 보류, 수의, 낙찰이력분析, totalCount: enriched.length } }];"
       },
       "id": "node-combine",
       "name": "결과 통합",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1600, 0]
+      "position": [
+        1600,
+        0
+      ]
     },
     {
       "parameters": {
@@ -219,20 +361,28 @@
       "name": "이메일 HTML 완성",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1820, 0]
+      "position": [
+        1820,
+        0
+      ]
     },
     {
       "parameters": {
         "sendTo": "jjk0112@gmail.com",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.html }}",
-        "options": { "appendAttribution": false }
+        "options": {
+          "appendAttribution": false
+        }
       },
       "id": "node-gmail",
       "name": "Gmail 발송",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [2040, 0]
+      "position": [
+        2040,
+        0
+      ]
     },
     {
       "parameters": {
@@ -242,54 +392,188 @@
       "name": "공고 없음 (종료)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, 200]
+      "position": [
+        1140,
+        200
+      ]
     }
   ],
   "connections": {
     "매일 KST 08:00": {
-      "main": [[{ "node": "검색 조건 설정", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "검색 조건 설정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "검색 조건 설정": {
-      "main": [[
-        { "node": "용역 공고 조회", "type": "main", "index": 0 },
-        { "node": "물품 공고 조회", "type": "main", "index": 0 },
-        { "node": "공사 공고 조회", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "용역 공고 조회",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "물품 공고 조회",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "공사 공고 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "용역 공고 조회": {
-      "main": [[{ "node": "병합 및 키워드 필터", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "병합 및 키워드 필터",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "물품 공고 조회": {
-      "main": [[{ "node": "병합 및 키워드 필터", "type": "main", "index": 1 }]]
+      "main": [
+        [
+          {
+            "node": "병합 및 키워드 필터",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     },
     "공사 공고 조회": {
-      "main": [[{ "node": "병합 및 키워드 필터", "type": "main", "index": 2 }]]
+      "main": [
+        [
+          {
+            "node": "병합 및 키워드 필터",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
     },
     "병합 및 키워드 필터": {
-      "main": [[{ "node": "매칭 공고 있음?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "매칭 공고 있음?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "매칭 공고 있음?": {
       "main": [
-        [{ "node": "수의계약 분류", "type": "main", "index": 0 }],
-        [{ "node": "공고 없음 (종료)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "수의계약 분류",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "공고 없음 (종료)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "수의계약 분류": {
-      "main": [[
-        { "node": "AI 프롬프트 준비", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "AI 프롬프트 준비",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "낙찰 이력 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "AI 프롬프트 준비": {
-      "main": [[{ "node": "Claude AI 호출", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Claude AI 호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Claude AI 호출": {
-      "main": [[{ "node": "결과 통합", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "결과 통합",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "결과 통합": {
-      "main": [[{ "node": "이메일 HTML 완성", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "이메일 HTML 완성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "이메일 HTML 완성": {
-      "main": [[{ "node": "Gmail 발송", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Gmail 발송",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "낙찰 이력 조회": {
+      "main": [
+        [
+          {
+            "node": "낙찰가 분析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "낙찰가 분析": {
+      "main": [
+        [
+          {
+            "node": "결과 통합",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     }
   },
   "settings": {
