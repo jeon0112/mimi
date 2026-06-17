@@ -29,14 +29,12 @@
 
     {
       "parameters": {
-        "url": "=https://query1.finance.yahoo.com/v10/finance/quoteSummary/{{ $json.ticker }}",
+        "url": "=https://query1.finance.yahoo.com/v8/finance/chart/{{ $json.ticker }}",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            {
-              "name": "modules",
-              "value": "financialData,defaultKeyStatistics,incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory,earningsTrend"
-            }
+            { "name": "interval", "value": "1d" },
+            { "name": "range", "value": "1y" }
           ]
         },
         "sendHeaders": true,
