@@ -1,0 +1,354 @@
+{
+  "name": "적정주가 분석 워크플로우 v2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 21 * * *" }]
+        }
+      },
+      "id": "node-01",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stock-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-02",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [100, 480]
+    },
+    {
+      "parameters": {
+        "url": "=https://query1.finance.yahoo.com/v10/finance/quoteSummary/{{ $json.ticker }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "modules",
+              "value": "financialData,defaultKeyStatistics,incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory,earningsTrend"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "User-Agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+          ]
+        },
+        "options": {
+          "timeout": 10000,
+          "retry": { "enabled": true, "maxTries": 3, "waitBetweenTries": 2000 }
+        }
+      },
+      "id": "node-03",
+      "name": "Yahoo Finance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [350, 240]
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "function", "value": "OVERVIEW" },
+            { "name": "symbol", "value": "={{ $json.ticker }}" },
+            { "name": "apikey", "value": "={{ $credentials.alphaVantageApiKey }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "node-04",
+      "name": "Alpha Vantage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [350, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $json.quoteSummary?.error }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "node-05",
+      "name": "Error Handler #1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [350, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================================================================\n// LAYER 3 - NODE 3-1: 데이터 정제/정규화 (BUG FIX v2.0)\n// FIX #1: fifty_two_week_high → fiftyTwoWeekHigh (price not percentage)\n// ================================================================\n\nconst inputs = $input.all();\nconst yahoo = inputs[0]?.json || {};\nconst alpha = inputs[1]?.json || {};\n\nconst fin = yahoo.quoteSummary?.result?.[0];\nconst fd = fin?.financialData;\nconst ks = fin?.defaultKeyStatistics;\nconst is = fin?.incomeStatementHistory?.incomeStatementHistory?.[0];\nconst bs = fin?.balanceSheetHistory?.balanceSheetHistory?.[0];\nconst cf = fin?.cashflowStatementHistory?.cashflowStatements?.[0];\n\nconst safe = (obj, key, fallback = null) => {\n  const val = obj?.[key]?.raw;\n  return (val !== undefined && val !== null) ? val : fallback;\n};\n\nreturn [{\n  json: {\n    // === 메타 ===\n    ticker: alpha.Symbol || $('Webhook Trigger').item?.json?.ticker,\n    company_name: alpha.Name,\n    // FIX #11/#12: Sector 정규화 (Alpha Vantage 원본 값 보존)\n    sector: alpha.Sector || null,\n    sector_normalized: (alpha.Sector || '').trim(),\n    industry: alpha.Industry,\n    market_cap: safe(fd, 'marketCap'),\n    currency: fd?.financialCurrency || 'USD',\n\n    // === 가격 데이터 ===\n    current_price: safe(fd, 'currentPrice'),\n    target_price_analyst: safe(fd, 'targetMeanPrice'),\n    // FIX #1: 52WeekChange(비율)이 아닌 실제 52주 최고/최저가로 수정\n    fifty_two_week_high: safe(ks, 'fiftyTwoWeekHigh'),\n    fifty_two_week_low: safe(ks, 'fiftyTwoWeekLow'),\n    week_52_change_pct: safe(ks, '52WeekChange'),  // 퍼센트 변화율 (별도 보관)\n    beta: safe(ks, 'beta'),\n\n    // === 손익계산서 ===\n    revenue: safe(is, 'totalRevenue'),\n    gross_profit: safe(is, 'grossProfit'),\n    ebit: safe(is, 'ebit'),\n    net_income: safe(is, 'netIncome'),\n    eps: safe(ks, 'trailingEps'),\n    eps_forward: safe(ks, 'forwardEps'),\n\n    // === 재무상태표 ===\n    total_assets: safe(bs, 'totalAssets'),\n    total_equity: safe(bs, 'totalStockholderEquity'),\n    total_debt: safe(bs, 'longTermDebt'),\n    book_value_per_share: safe(ks, 'bookValue'),\n    shares_outstanding: safe(ks, 'sharesOutstanding'),  // FIX #10: 직접 주식수 사용\n\n    // === 현금흐름 ===\n    operating_cash_flow: safe(cf, 'totalCashFromOperatingActivities'),\n    capex: safe(cf, 'capitalExpenditures'),\n    free_cash_flow: safe(fd, 'freeCashflow'),\n\n    // === 성장률 ===\n    revenue_growth: safe(fd, 'revenueGrowth'),\n    earnings_growth: safe(fd, 'earningsGrowth'),\n\n    // === 수익성 ===\n    roe: safe(fd, 'returnOnEquity'),\n    roa: safe(fd, 'returnOnAssets'),\n    profit_margin: safe(fd, 'profitMargins'),\n    operating_margin: safe(fd, 'operatingMargins'),\n\n    collected_at: new Date().toISOString(),\n    data_quality_score: null\n  }\n}];"
+      },
+      "id": "node-06",
+      "name": "데이터 정제",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================================================================\n// LAYER 3 - NODE 3-2: PER/PBR/DCF 계산 (BUG FIX v2.0)\n// FIX #2: DCF Phase2 이중 복리 버그 수정\n// FIX #3: 터미널 밸류 오프-바이-원 수정\n// FIX #6: 할인율 ≤ 성장률 제로 나눗셈 방어\n// FIX #7: 음수 EPS PER 역전 방지\n// FIX #8: 음수 장부가 PBR 방지\n// FIX #9: 음수 FCF 루프 방어\n// FIX #10: current_price=0 무한대 방지\n// FIX #11: 누락 섹터 벤치마크 추가\n// FIX #12: 섹터 이름 대소문자 정규화\n// FIX #17: 베타 연동 안전마진 동적 조정\n// FIX #18: 가중 데이터 품질 점수\n// FIX #19: current_price=0 upside 무한대 방지\n// ================================================================\n\nconst d = $input.first().json;\n\nconst pct = (v) => v != null ? (v * 100).toFixed(2) + '%' : 'N/A';\nconst fmt = (v) => v != null ? v.toLocaleString() : 'N/A';\nconst ratio = (a, b) => (a != null && b != null && b !== 0) ? (a / b) : null;\n\n// ================================================================\n// FIX #11: 누락 섹터 전체 추가\n// FIX #12: 섹터 정규화 함수\n// ================================================================\nconst SECTOR_PER_BENCHMARKS = {\n  'Technology': { fair: 25, overvalued: 35, undervalued: 15 },\n  'Information Technology': { fair: 25, overvalued: 35, undervalued: 15 },\n  'Finance': { fair: 12, overvalued: 18, undervalued: 8 },\n  'Financial Services': { fair: 12, overvalued: 18, undervalued: 8 },\n  'Healthcare': { fair: 20, overvalued: 30, undervalued: 12 },\n  'Consumer Cyclical': { fair: 18, overvalued: 28, undervalued: 10 },\n  'Consumer Discretionary': { fair: 18, overvalued: 28, undervalued: 10 },\n  'Consumer Defensive': { fair: 16, overvalued: 24, undervalued: 10 },\n  'Consumer Staples': { fair: 16, overvalued: 24, undervalued: 10 },\n  'Energy': { fair: 10, overvalued: 16, undervalued: 6 },\n  'Industrials': { fair: 16, overvalued: 24, undervalued: 10 },\n  'Materials': { fair: 14, overvalued: 22, undervalued: 8 },\n  'Basic Materials': { fair: 14, overvalued: 22, undervalued: 8 },\n  'Real Estate': { fair: 14, overvalued: 20, undervalued: 8 },\n  'Utilities': { fair: 12, overvalued: 18, undervalued: 8 },\n  'Communication Services': { fair: 18, overvalued: 28, undervalued: 10 },\n  'default': { fair: 18, overvalued: 25, undervalued: 10 }\n};\n\nconst SECTOR_PBR_BENCHMARKS = {\n  'Technology': { fair: 5, overvalued: 10, undervalued: 2 },\n  'Information Technology': { fair: 5, overvalued: 10, undervalued: 2 },\n  'Finance': { fair: 1.2, overvalued: 2, undervalued: 0.7 },\n  'Financial Services': { fair: 1.2, overvalued: 2, undervalued: 0.7 },\n  'Healthcare': { fair: 4, overvalued: 8, undervalued: 2 },\n  'Consumer Cyclical': { fair: 3, overvalued: 6, undervalued: 1 },\n  'Consumer Discretionary': { fair: 3, overvalued: 6, undervalued: 1 },\n  'Consumer Defensive': { fair: 2.5, overvalued: 5, undervalued: 1 },\n  'Consumer Staples': { fair: 2.5, overvalued: 5, undervalued: 1 },\n  'Energy': { fair: 1.5, overvalued: 3, undervalued: 0.6 },\n  'Industrials': { fair: 2.5, overvalued: 5, undervalued: 1 },\n  'Materials': { fair: 2, overvalued: 4, undervalued: 0.8 },\n  'Basic Materials': { fair: 2, overvalued: 4, undervalued: 0.8 },\n  'Real Estate': { fair: 1, overvalued: 2, undervalued: 0.5 },\n  'Utilities': { fair: 1.5, overvalued: 2.5, undervalued: 0.8 },\n  'Communication Services': { fair: 3, overvalued: 6, undervalued: 1 },\n  'default': { fair: 2, overvalued: 4, undervalued: 0.8 }\n};\n\n// FIX #12: 대소문자 정규화 후 섹터 벤치마크 조회\nconst findBenchmark = (table, sector) => {\n  if (!sector) return table['default'];\n  const normalized = sector.trim();\n  const exactMatch = table[normalized];\n  if (exactMatch) return exactMatch;\n  const caseMatch = Object.keys(table).find(k => k.toLowerCase() === normalized.toLowerCase());\n  return caseMatch ? table[caseMatch] : table['default'];\n};\n\nconst per_bench = findBenchmark(SECTOR_PER_BENCHMARKS, d.sector_normalized);\nconst pbr_bench = findBenchmark(SECTOR_PBR_BENCHMARKS, d.sector_normalized);\n\n// ================================================================\n// [RULE-01] PER 분석\n// FIX #7: 음수 EPS는 PER 제외\n// ================================================================\nconst per_trailing = (d.eps && d.eps > 0) ? ratio(d.current_price, d.eps) : null;\nconst per_forward = (d.eps_forward && d.eps_forward > 0) ? ratio(d.current_price, d.eps_forward) : null;\n\nconst per_signal = per_trailing\n  ? (per_trailing < per_bench.undervalued ? 'UNDERVALUED'\n     : per_trailing > per_bench.overvalued ? 'OVERVALUED' : 'FAIR')\n  : 'INSUFFICIENT_DATA';\n\nconst per_fair_price = (d.eps && d.eps > 0) ? d.eps * per_bench.fair : null;\n\n// ================================================================\n// [RULE-02] PBR 분석\n// FIX #8: 음수 장부가(자본잠식) PBR 제외\n// ================================================================\nconst pbr = (d.book_value_per_share && d.book_value_per_share > 0)\n  ? ratio(d.current_price, d.book_value_per_share)\n  : null;\n\nconst pbr_signal = pbr\n  ? (pbr < pbr_bench.undervalued ? 'UNDERVALUED'\n     : pbr > pbr_bench.overvalued ? 'OVERVALUED' : 'FAIR')\n  : 'INSUFFICIENT_DATA';\n\nconst pbr_fair_price = (d.book_value_per_share && d.book_value_per_share > 0)\n  ? d.book_value_per_share * pbr_bench.fair\n  : null;\n\n// ================================================================\n// [RULE-03] DCF 모델\n// FIX #2: Phase2 이중 복리 버그 - 루프 변수 분리\n// FIX #3: 터미널 밸류 오프-바이-원 수정\n// FIX #6: DISCOUNT_RATE ≤ GROWTH_RATE_PHASE2 방어\n// FIX #9: 음수 FCF 중간 경로 방어\n// FIX #10: current_price=0 division by zero 방어\n// FIX #17: 베타 연동 안전마진 동적 조정\n// ================================================================\nconst FCF = d.free_cash_flow;\nconst GROWTH_RATE_PHASE1 = Math.min(\n  (d.earnings_growth != null && d.earnings_growth > 0) ? d.earnings_growth : 0.10,\n  0.25\n);\nconst GROWTH_RATE_PHASE2 = 0.03;\nconst DISCOUNT_RATE = 0.10;\nconst PROJECTION_YEARS = 10;\n\n// FIX #10: 직접 주식수 우선, 없으면 시총/주가 (0 나눗셈 방어)\nconst SHARES_OUTSTANDING = d.shares_outstanding\n  ? d.shares_outstanding\n  : (d.market_cap && d.current_price && d.current_price > 0)\n    ? d.market_cap / d.current_price\n    : null;\n\nlet dcf_intrinsic_value = null;\nlet dcf_signal = 'INSUFFICIENT_DATA';\n\n// FIX #6: 터미널 밸류 제로 나눗셈 방어\nif (DISCOUNT_RATE <= GROWTH_RATE_PHASE2) {\n  dcf_signal = 'INVALID_PARAMETERS';\n} else if (FCF && SHARES_OUTSTANDING && FCF > 0) {\n  let total_pv = 0;\n  let fcf_year = FCF;\n  let phase1_valid = true;\n\n  // Phase 1: 고성장 구간 (1-5년)\n  // FIX #2: phase1 루프 변수를 phase2와 분리\n  for (let y = 1; y <= 5; y++) {\n    fcf_year *= (1 + GROWTH_RATE_PHASE1);\n    // FIX #9: 중간에 FCF가 음수가 될 경우 중단\n    if (fcf_year < 0) {\n      phase1_valid = false;\n      dcf_signal = 'NEGATIVE_GROWTH_PATH';\n      break;\n    }\n    total_pv += fcf_year / Math.pow(1 + DISCOUNT_RATE, y);\n  }\n\n  if (phase1_valid) {\n    // FIX #2: Phase2는 Phase1 마지막 값에서 시작 (별도 변수)\n    let fcf_phase2 = fcf_year;\n    for (let y = 6; y <= PROJECTION_YEARS; y++) {\n      // FIX #2: 선형보간 수식 수정 (y=6: PHASE1, y=10: PHASE2)\n      const progress = (y - 5) / (PROJECTION_YEARS - 5);\n      const blend_rate = GROWTH_RATE_PHASE1 * (1 - progress) + GROWTH_RATE_PHASE2 * progress;\n      fcf_phase2 *= (1 + blend_rate);\n      total_pv += fcf_phase2 / Math.pow(1 + DISCOUNT_RATE, y);\n    }\n\n    // FIX #3: fcf_phase2가 이미 10년차 값 → 한번만 성장 적용\n    const terminal_value = fcf_phase2 * (1 + GROWTH_RATE_PHASE2) / (DISCOUNT_RATE - GROWTH_RATE_PHASE2);\n    total_pv += terminal_value / Math.pow(1 + DISCOUNT_RATE, PROJECTION_YEARS);\n\n    // FIX #17: 베타 연동 안전마진 동적 조정\n    let safety_margin;\n    if (d.beta && d.beta > 2.0)       safety_margin = 0.55; // 고변동성: 45% 마진\n    else if (d.beta && d.beta > 1.5)  safety_margin = 0.60; // 중고변동성: 40% 마진\n    else if (d.beta && d.beta > 1.0)  safety_margin = 0.65; // 중변동성: 35% 마진\n    else                               safety_margin = 0.70; // 기본: 30% 마진 (버핏)\n\n    dcf_intrinsic_value = (total_pv / SHARES_OUTSTANDING) * safety_margin;\n\n    // FIX #19: current_price=0 무한대 방지\n    if (d.current_price && d.current_price > 0) {\n      dcf_signal = d.current_price < dcf_intrinsic_value * 0.8 ? 'UNDERVALUED'\n        : d.current_price > dcf_intrinsic_value * 1.2 ? 'OVERVALUED' : 'FAIR';\n    }\n  }\n}\n\n// ================================================================\n// [RULE-04] 종합 적정주가 (가중평균, 정규화 포함)\n// ================================================================\nconst WEIGHTS = { PER: 0.30, PBR: 0.20, DCF: 0.50 };\n\nconst valid_prices = [\n  per_fair_price ? { val: per_fair_price, weight: WEIGHTS.PER, model: 'PER' } : null,\n  pbr_fair_price ? { val: pbr_fair_price, weight: WEIGHTS.PBR, model: 'PBR' } : null,\n  dcf_intrinsic_value ? { val: dcf_intrinsic_value, weight: WEIGHTS.DCF, model: 'DCF' } : null\n].filter(Boolean);\n\nlet composite_fair_price = null;\nlet total_weight = 0;\n\nif (valid_prices.length > 0) {\n  const weighted_sum = valid_prices.reduce((acc, p) => acc + p.val * p.weight, 0);\n  total_weight = valid_prices.reduce((acc, p) => acc + p.weight, 0);\n  composite_fair_price = weighted_sum / total_weight;  // 정규화된 가중평균\n}\n\n// ================================================================\n// [RULE-05] 투자 등급\n// ================================================================\nconst signals = [per_signal, pbr_signal, dcf_signal].filter(s => s !== 'INSUFFICIENT_DATA' && s !== 'INVALID_PARAMETERS' && s !== 'NEGATIVE_GROWTH_PATH');\nconst undervalued_count = signals.filter(s => s === 'UNDERVALUED').length;\nconst overvalued_count = signals.filter(s => s === 'OVERVALUED').length;\n\nconst GRADE_TABLE = {\n  '3_0': { grade: 'STRONG_BUY',  label: '강력매수', color: '#00C851' },\n  '2_0': { grade: 'BUY',         label: '매수',     color: '#7CB342' },\n  '1_0': { grade: 'WEAK_BUY',   label: '약매수',   color: '#B2DFDB' },\n  '1_1': { grade: 'HOLD',        label: '보유',     color: '#FFA726' },\n  '0_0': { grade: 'HOLD',        label: '보유',     color: '#FFA726' },\n  '0_1': { grade: 'WEAK_SELL',  label: '약매도',   color: '#EF9A9A' },\n  '0_2': { grade: 'SELL',        label: '매도',     color: '#F44336' },\n  '0_3': { grade: 'STRONG_SELL', label: '강력매도', color: '#B71C1C' }\n};\n\nconst grade_key = `${undervalued_count}_${overvalued_count}`;\nconst investment_grade = GRADE_TABLE[grade_key] || { grade: 'NEUTRAL', label: '중립', color: '#9E9E9E' };\n\n// FIX #19: current_price=0 상승여력 무한대 방지\nconst upside_potential = (composite_fair_price && d.current_price && d.current_price > 0)\n  ? ((composite_fair_price - d.current_price) / d.current_price * 100).toFixed(2)\n  : null;\n\n// ================================================================\n// FIX #18: 가중 데이터 품질 점수 (0 = 누락, 0값 정상 처리)\n// ================================================================\nconst quality_fields = [\n  { name: 'eps',                 value: d.eps,                 weight: 0.25 },\n  { name: 'book_value_per_share',value: d.book_value_per_share,weight: 0.25 },\n  { name: 'free_cash_flow',      value: d.free_cash_flow,      weight: 0.25 },\n  { name: 'revenue',             value: d.revenue,             weight: 0.15 },\n  { name: 'net_income',          value: d.net_income,          weight: 0.10 }\n];\nconst data_quality_score = Math.round(\n  quality_fields\n    .filter(f => f.value !== null && f.value !== undefined)\n    .reduce((sum, f) => sum + f.weight, 0) * 100\n);\n\nreturn [{\n  json: {\n    ...d,\n    data_quality_score,\n    models_available: valid_prices.map(p => p.model),\n    valuation: {\n      per: {\n        trailing: per_trailing?.toFixed(2),\n        forward: per_forward?.toFixed(2),\n        signal: per_signal,\n        fair_price: per_fair_price?.toFixed(2),\n        benchmark: per_bench\n      },\n      pbr: {\n        value: pbr?.toFixed(2),\n        signal: pbr_signal,\n        fair_price: pbr_fair_price?.toFixed(2),\n        benchmark: pbr_bench\n      },\n      dcf: {\n        intrinsic_value: dcf_intrinsic_value?.toFixed(2),\n        signal: dcf_signal,\n        growth_rate_used: pct(GROWTH_RATE_PHASE1),\n        discount_rate: pct(DISCOUNT_RATE),\n        terminal_growth: pct(GROWTH_RATE_PHASE2)\n      },\n      composite: {\n        fair_price: composite_fair_price?.toFixed(2),\n        current_price: d.current_price,\n        upside_potential: upside_potential ? upside_potential + '%' : 'N/A',\n        investment_grade: investment_grade.grade,\n        grade_label: investment_grade.label,\n        grade_color: investment_grade.color,\n        models_used: valid_prices.length,\n        models_list: valid_prices.map(p => p.model).join('+'),\n        data_quality_score\n      }\n    },\n    calculated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-07",
+      "name": "PER/PBR/DCF 계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 440]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-01",
+              "name": "packet_id",
+              "value": "={{ $now.toISOString() }}_{{ $json.ticker }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-02",
+              "name": "packet_version",
+              "value": "2.0",
+              "type": "string"
+            },
+            {
+              "id": "assign-03",
+              "name": "source_layer",
+              "value": "DATA_TRANSFORM",
+              "type": "string"
+            },
+            {
+              "id": "assign-04",
+              "name": "payload",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "assign-05",
+              "name": "routing",
+              "value": "={{ { send_to_llm: true, llm_providers: ['gemini', 'claude'], fallback_provider: 'openai' } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-08",
+      "name": "패킷 구조화",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [600, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "key", "value": "={{ $credentials.geminiApiKey }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"generationConfig\": { \"temperature\": 0.3, \"maxOutputTokens\": 2048 },\n  \"systemInstruction\": {\n    \"parts\": [{ \"text\": \"당신은 CFA 자격증을 보유한 전문 주식 애널리스트입니다. 정량 데이터 기반 정성적 투자 논거를 작성하세요. 반드시 순수 JSON만 출력하세요 (마크다운 코드블록 금지).\" }]\n  },\n  \"contents\": [{\n    \"role\": \"user\",\n    \"parts\": [{ \"text\": \"다음 기업 재무 데이터를 분석하여 투자 의견을 제시하세요:\\n\\n기업: {{ $json.payload.company_name }} ({{ $json.payload.ticker }})\\n섹터: {{ $json.payload.sector }}\\n현재주가: ${{ $json.payload.current_price }}\\n복합 적정주가: ${{ $json.payload.valuation.composite.fair_price }}\\n상승여력: {{ $json.payload.valuation.composite.upside_potential }}\\n투자등급: {{ $json.payload.valuation.composite.grade_label }}\\n사용 모델: {{ $json.payload.valuation.composite.models_list }}\\n\\nPER(후행): {{ $json.payload.valuation.per.trailing }}배 → {{ $json.payload.valuation.per.signal }}\\nPBR: {{ $json.payload.valuation.pbr.value }}배 → {{ $json.payload.valuation.pbr.signal }}\\nDCF 내재가치: ${{ $json.payload.valuation.dcf.intrinsic_value }} → {{ $json.payload.valuation.dcf.signal }}\\n\\nROE: {{ $json.payload.roe }} | ROA: {{ $json.payload.roa }}\\n영업이익률: {{ $json.payload.operating_margin }}\\n매출성장률: {{ $json.payload.revenue_growth }}\\n\\n다음 JSON 구조로만 응답하세요 (다른 텍스트 없이):\\n{\\n  \\\"bull_case\\\": \\\"매수 논거 (3가지 핵심 포인트)\\\",\\n  \\\"bear_case\\\": \\\"매도 논거 (3가지 핵심 포인트)\\\",\\n  \\\"catalyst_events\\\": [\\\"주가 상승 촉매 이벤트 목록\\\"],\\n  \\\"competitive_moat\\\": \\\"경쟁 우위 분석\\\",\\n  \\\"sector_outlook\\\": \\\"섹터 전망\\\",\\n  \\\"analyst_consensus\\\": \\\"시장 컨센서스와의 비교\\\",\\n  \\\"time_horizon\\\": \\\"단기|중기|장기\\\"\\n}\" }]\n  }]\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-09",
+      "name": "Gemini 분석",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 240]
+    },
+    {
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $credentials.anthropicApiKey }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"model\": \"claude-opus-4-8\",\n  \"max_tokens\": 2048,\n  \"temperature\": 0.2,\n  \"system\": \"당신은 리스크 관리 전문가입니다. 주어진 재무 데이터에서 투자 리스크를 체계적으로 식별하세요. 반드시 순수 JSON만 응답하세요 (마크다운 코드블록 금지).\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"{{ $('패킷 구조화').item.json.payload.company_name }} ({{ $('패킷 구조화').item.json.payload.ticker }}) 리스크 분석:\\n\\n재무 건전성:\\n- 총부채: {{ $('패킷 구조화').item.json.payload.total_debt }}\\n- 총자산: {{ $('패킷 구조화').item.json.payload.total_assets }}\\n- 베타계수: {{ $('패킷 구조화').item.json.payload.beta }}\\n- 52주 고가: {{ $('패킷 구조화').item.json.payload.fifty_two_week_high }}\\n- 52주 저가: {{ $('패킷 구조화').item.json.payload.fifty_two_week_low }}\\n\\n밸류에이션 리스크:\\n- 데이터 품질점수: {{ $('패킷 구조화').item.json.payload.data_quality_score }}/100\\n- 사용된 모델수: {{ $('패킷 구조화').item.json.payload.valuation.composite.models_used }}/3\\n- 사용된 모델: {{ $('패킷 구조화').item.json.payload.valuation.composite.models_list }}\\n\\n다음 JSON 구조로만 응답 (다른 텍스트 없이):\\n{\\n  \\\"risk_score\\\": 0~100 숫자,\\n  \\\"financial_risks\\\": [\\\"재무 리스크 목록\\\"],\\n  \\\"market_risks\\\": [\\\"시장 리스크 목록\\\"],\\n  \\\"regulatory_risks\\\": [\\\"규제 리스크 목록\\\"],\\n  \\\"valuation_uncertainty\\\": \\\"밸류에이션 불확실성 설명\\\",\\n  \\\"stop_loss_suggestion\\\": \\\"손절매 제안가격\\\",\\n  \\\"position_size_suggestion\\\": \\\"포지션 크기 제안 (포트폴리오 대비 %)\\\",\\n  \\\"red_flags\\\": [\\\"즉각적인 주의 신호\\\"],\\n  \\\"risk_grade\\\": \\\"LOW|MEDIUM|HIGH|VERY_HIGH\\\"\\n}\"\n  }]\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-10",
+      "name": "Claude 분석",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-llm-01",
+              "leftValue": "={{ $json.error !== undefined }}",
+              "rightValue": "true",
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "node-11",
+      "name": "Error Handler #2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================================================================\n// LAYER 4 - NODE 4-4: Gemini + Claude 결과 통합\n// FIX #13: 입력 순서 가정 제거 → 노드명으로 명시적 참조\n// FIX #20: JSON 파싱 try-catch 추가\n// ================================================================\n\n// FIX #20: 안전한 JSON 파싱 헬퍼\nconst safeJsonParse = (text, nodeName) => {\n  if (!text) return { _parse_error: `Empty response from ${nodeName}` };\n  // LLM이 마크다운 코드블록으로 감쌀 경우 제거\n  const cleaned = text.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/i, '').trim();\n  try {\n    return JSON.parse(cleaned);\n  } catch (e) {\n    // JSON 파싱 실패 시 폴백: 원문 보존\n    return { _parse_error: e.message, _raw_text: cleaned.substring(0, 200) };\n  }\n};\n\n// FIX #13: 노드명 기반 명시적 참조 ($('노드명').first().json)\nconst gemini_raw = $('Gemini 분석').first().json;\nconst claude_raw = $('Claude 분석').first().json;\nconst base = $('패킷 구조화').first().json;\n\n// Gemini 응답 파싱 (Gemini API 구조: candidates[0].content.parts[0].text)\nconst gemini_text = gemini_raw.candidates?.[0]?.content?.parts?.[0]?.text || '';\nconst gemini_parsed = safeJsonParse(gemini_text, 'Gemini');\n\n// Claude 응답 파싱 (Anthropic API 구조: content[0].text)\nconst claude_text = claude_raw.content?.[0]?.text || '';\nconst claude_parsed = safeJsonParse(claude_text, 'Claude');\n\n// LLM 실패 시 안전 기본값\nconst safe_claude = { risk_grade: 'MEDIUM', risk_score: 50, ...claude_parsed };\nconst safe_gemini = { time_horizon: '중기', bull_case: 'N/A', bear_case: 'N/A', ...gemini_parsed };\n\n// 리스크 등급 반영 (VERY_HIGH일 때 투자등급 1단계 하향)\nconst combined_signal = safe_claude.risk_grade === 'VERY_HIGH'\n  ? 'DOWNGRADE_' + base.payload.valuation.composite.investment_grade\n  : base.payload.valuation.composite.investment_grade;\n\nreturn [{\n  json: {\n    ...base.payload,\n    llm_analysis: {\n      qualitative: safe_gemini,\n      risk: safe_claude,\n      combined_signal,\n      final_recommendation: {\n        grade: base.payload.valuation.composite.investment_grade,\n        label: base.payload.valuation.composite.grade_label,\n        fair_price: base.payload.valuation.composite.fair_price,\n        upside: base.payload.valuation.composite.upside_potential,\n        risk_score: safe_claude.risk_score,\n        risk_grade: safe_claude.risk_grade,\n        time_horizon: safe_gemini.time_horizon,\n        key_bullish: safe_gemini.bull_case,\n        key_bearish: safe_gemini.bear_case,\n        stop_loss: safe_claude.stop_loss_suggestion,\n        position_size: safe_claude.position_size_suggestion,\n        red_flags: safe_claude.red_flags,\n        catalyst_events: safe_gemini.catalyst_events,\n        models_used: base.payload.valuation.composite.models_list,\n        data_quality_score: base.payload.data_quality_score\n      },\n      parse_status: {\n        gemini_ok: !gemini_parsed._parse_error,\n        claude_ok: !claude_parsed._parse_error\n      },\n      analyzed_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "node-12",
+      "name": "결과 통합",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 340]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "id", "value": "YOUR_GOOGLE_SHEET_ID" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "주가분석_결과" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "A": "={{ $json.ticker }}",
+            "B": "={{ $json.company_name }}",
+            "C": "={{ $json.current_price }}",
+            "D": "={{ $json.valuation.composite.fair_price }}",
+            "E": "={{ $json.valuation.composite.upside_potential }}",
+            "F": "={{ $json.valuation.composite.investment_grade }}",
+            "G": "={{ $json.llm_analysis.risk.risk_grade }}",
+            "H": "={{ $json.valuation.per.trailing }}",
+            "I": "={{ $json.valuation.pbr.value }}",
+            "J": "={{ $json.valuation.dcf.intrinsic_value }}",
+            "K": "={{ $json.valuation.composite.models_list }}",
+            "L": "={{ $json.data_quality_score }}",
+            "M": "={{ $json.llm_analysis.analyzed_at }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-13",
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1350, 240]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $credentials.telegramChatId }}",
+        "text": "=📊 *주가 분석 완료: {{ $json.ticker }}*\n\n🏢 {{ $json.company_name }} | {{ $json.sector }}\n💰 현재가: ${{ $json.current_price }}\n🎯 적정주가: ${{ $json.valuation.composite.fair_price }}\n📈 상승여력: {{ $json.valuation.composite.upside_potential }}\n🔢 사용모델: {{ $json.valuation.composite.models_list }} | 품질: {{ $json.data_quality_score }}/100\n\n━━━━━━━━━━━━━━━━━━━\n*밸류에이션 신호*\n• PER {{ $json.valuation.per.trailing }}배 → {{ $json.valuation.per.signal }}\n• PBR {{ $json.valuation.pbr.value }}배 → {{ $json.valuation.pbr.signal }}\n• DCF ${{ $json.valuation.dcf.intrinsic_value }} → {{ $json.valuation.dcf.signal }}\n\n━━━━━━━━━━━━━━━━━━━\n*최종 투자 의견*\n*{{ $json.llm_analysis.final_recommendation.label }}* (리스크: {{ $json.llm_analysis.final_recommendation.risk_grade }})\n📉 손절가: {{ $json.llm_analysis.final_recommendation.stop_loss }}\n📦 포지션: {{ $json.llm_analysis.final_recommendation.position_size }}\n⏱ 투자기간: {{ $json.llm_analysis.final_recommendation.time_horizon }}\n\n*주요 매수 논거:*\n{{ $json.llm_analysis.final_recommendation.key_bullish }}\n\n⚠️ *주요 리스크:*\n{{ $json.llm_analysis.final_recommendation.red_flags }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "node-14",
+      "name": "Telegram 알림",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1350, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "node-15",
+      "name": "Webhook 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1350, 560]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Yahoo Finance", "type": "main", "index": 0 }, { "node": "Alpha Vantage", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Yahoo Finance", "type": "main", "index": 0 }, { "node": "Alpha Vantage", "type": "main", "index": 0 }]]
+    },
+    "Yahoo Finance": {
+      "main": [[{ "node": "Error Handler #1", "type": "main", "index": 0 }]]
+    },
+    "Alpha Vantage": {
+      "main": [[{ "node": "Error Handler #1", "type": "main", "index": 0 }]]
+    },
+    "Error Handler #1": {
+      "main": [
+        [{ "node": "데이터 정제", "type": "main", "index": 0 }],
+        [{ "node": "Schedule Trigger", "type": "main", "index": 0 }]
+      ]
+    },
+    "데이터 정제": {
+      "main": [[{ "node": "PER/PBR/DCF 계산", "type": "main", "index": 0 }]]
+    },
+    "PER/PBR/DCF 계산": {
+      "main": [[{ "node": "패킷 구조화", "type": "main", "index": 0 }]]
+    },
+    "패킷 구조화": {
+      "main": [[{ "node": "Gemini 분석", "type": "main", "index": 0 }, { "node": "Claude 분석", "type": "main", "index": 0 }]]
+    },
+    "Gemini 분석": {
+      "main": [[{ "node": "Error Handler #2", "type": "main", "index": 0 }]]
+    },
+    "Claude 분석": {
+      "main": [[{ "node": "Error Handler #2", "type": "main", "index": 0 }]]
+    },
+    "Error Handler #2": {
+      "main": [
+        [{ "node": "결과 통합", "type": "main", "index": 0 }],
+        [{ "node": "결과 통합", "type": "main", "index": 0 }]
+      ]
+    },
+    "결과 통합": {
+      "main": [[
+        { "node": "Google Sheets", "type": "main", "index": 0 },
+        { "node": "Telegram 알림", "type": "main", "index": 0 },
+        { "node": "Webhook 응답", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [{ "name": "주식분석" }, { "name": "AI" }, { "name": "자동화" }],
+  "pinData": {},
+  "versionId": "v2.0-fixed",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  }
+}
