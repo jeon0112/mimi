@@ -1,0 +1,373 @@
+{
+  "name": "블루바이오 AI 총괄 채팅",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "chat-trigger",
+      "name": "채팅 트리거",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "webhookId": "bluebio-chat"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "당신은 블루바이오(주)의 AI 총괄 오케스트레이터입니다.\n\n블루바이오는 광주 소재 장애인기업 + 환경형 예비사회적기업입니다.\n\n담당 에이전트:\n- 🏛️ 나라봇: 나라장터 입찰 공고 수집 및 분석\n- 🏪 가게분석봇: 소상공인 상권분석, 매출 패턴 분석\n- ✍️ 콘텐츠봇: 블로그, 인스타그램, 스레드 글쓰기 자동화\n- 🎬 미디어봇: 릴스 영상 기획, 이미지 디자인\n- 📊 마케팅봇: 광고 전략, 디자인 제작\n\n사용자 메시지를 분석하여 아래 JSON 형식으로 응답하세요:\n- task_type: NARA(나라장터), STORE(가게분석), CONTENT(콘텐츠), MEDIA(미디어), MARKETING(마케팅), GENERAL(일반대화)\n- agent: 담당 에이전트 이름\n- reason: 분류 이유 (한국어)\n- prompt: 해당 에이전트에게 전달할 프롬프트 (한국어)"
+        }
+      },
+      "id": "orchestrator",
+      "name": "오케스트레이터",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"task_type\": \"NARA\",\n  \"agent\": \"나라봇\",\n  \"reason\": \"나라장터 입찰 관련 질문\",\n  \"prompt\": \"에이전트에게 전달할 내용\"\n}"
+      },
+      "id": "output-parser",
+      "name": "구조화된 출력 파서",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [220, 200]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-orchestrator",
+      "name": "오케스트레이터 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [0, 200]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.task_type }}",
+                    "rightValue": "NARA",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "나라봇"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.task_type }}",
+                    "rightValue": "STORE",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "가게분석봇"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.task_type }}",
+                    "rightValue": "CONTENT",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "콘텐츠봇"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.task_type }}",
+                    "rightValue": "MEDIA",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "미디어봇"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.task_type }}",
+                    "rightValue": "MARKETING",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "마케팅봇"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-node",
+      "name": "에이전트 라우터",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.prompt }}\n\n당신은 🏛️ 나라봇입니다. 나라장터 입찰 전문 AI입니다.\n블루바이오(광주, 장애인기업+예비사회적기업)에 유리한 공고를 분석합니다.\n수의계약(1억 이하), 지역제한 없는 공고, 홍보물/기념품/복지용구 관련 공고를 우선 추천하세요.",
+        "options": {}
+      },
+      "id": "nara-agent",
+      "name": "나라봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, -300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.prompt }}\n\n당신은 🏪 가게분석봇입니다. 소상공인 가게 분석 전문 AI입니다.\n상권분석, 경쟁사 조사, 매출 패턴, 고객 타겟 분석을 담당합니다.",
+        "options": {}
+      },
+      "id": "store-agent",
+      "name": "가게분석봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, -150]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.prompt }}\n\n당신은 ✍️ 콘텐츠봇입니다. SNS 콘텐츠 전문 AI입니다.\n블로그, 인스타그램, 스레드 글쓰기를 자동으로 작성합니다.\n가게 특성에 맞는 매력적인 콘텐츠를 한국어로 작성하세요.",
+        "options": {}
+      },
+      "id": "content-agent",
+      "name": "콘텐츠봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.prompt }}\n\n당신은 🎬 미디어봇입니다. 영상 및 이미지 기획 전문 AI입니다.\n릴스 영상 스크립트, 이미지 디자인 컨셉, 촬영 가이드를 제공합니다.",
+        "options": {}
+      },
+      "id": "media-agent",
+      "name": "미디어봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, 150]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.prompt }}\n\n당신은 📊 마케팅봇입니다. 마케팅 전략 전문 AI입니다.\n광고 전략, 타겟 마케팅, 브랜딩, 디자인 컨셉을 담당합니다.",
+        "options": {}
+      },
+      "id": "marketing-agent",
+      "name": "마케팅봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-nara",
+      "name": "나라봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, -150]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-store",
+      "name": "가게분석봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-content",
+      "name": "콘텐츠봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, 150]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-media",
+      "name": "미디어봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {}
+      },
+      "id": "model-marketing",
+      "name": "마케팅봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, 450]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "merge-node",
+      "name": "병합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [900, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=🤖 {{ $('에이전트 라우터').item.json.output.agent }} 답변:\n\n{{ $json.output }}",
+        "options": {}
+      },
+      "id": "respond-node",
+      "name": "채팅 응답",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [1100, 0]
+    }
+  ],
+  "connections": {
+    "채팅 트리거": {
+      "main": [
+        [{ "node": "오케스트레이터", "type": "main", "index": 0 }]
+      ]
+    },
+    "오케스트레이터": {
+      "main": [
+        [{ "node": "에이전트 라우터", "type": "main", "index": 0 }]
+      ]
+    },
+    "오케스트레이터 모델": {
+      "ai_languageModel": [
+        [{ "node": "오케스트레이터", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "구조화된 출력 파서": {
+      "ai_outputParser": [
+        [{ "node": "오케스트레이터", "type": "ai_outputParser", "index": 0 }]
+      ]
+    },
+    "에이전트 라우터": {
+      "main": [
+        [{ "node": "나라봇", "type": "main", "index": 0 }],
+        [{ "node": "가게분석봇", "type": "main", "index": 0 }],
+        [{ "node": "콘텐츠봇", "type": "main", "index": 0 }],
+        [{ "node": "미디어봇", "type": "main", "index": 0 }],
+        [{ "node": "마케팅봇", "type": "main", "index": 0 }]
+      ]
+    },
+    "나라봇 모델": {
+      "ai_languageModel": [
+        [{ "node": "나라봇", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "가게분석봇 모델": {
+      "ai_languageModel": [
+        [{ "node": "가게분석봇", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "콘텐츠봇 모델": {
+      "ai_languageModel": [
+        [{ "node": "콘텐츠봇", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "미디어봇 모델": {
+      "ai_languageModel": [
+        [{ "node": "미디어봇", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "마케팅봇 모델": {
+      "ai_languageModel": [
+        [{ "node": "마케팅봇", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "나라봇": {
+      "main": [
+        [{ "node": "병합", "type": "main", "index": 0 }]
+      ]
+    },
+    "가게분석봇": {
+      "main": [
+        [{ "node": "병합", "type": "main", "index": 1 }]
+      ]
+    },
+    "콘텐츠봇": {
+      "main": [
+        [{ "node": "병합", "type": "main", "index": 2 }]
+      ]
+    },
+    "미디어봇": {
+      "main": [
+        [{ "node": "병합", "type": "main", "index": 3 }]
+      ]
+    },
+    "마케팅봇": {
+      "main": [
+        [{ "node": "병합", "type": "main", "index": 4 }]
+      ]
+    },
+    "병합": {
+      "main": [
+        [{ "node": "채팅 응답", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}
