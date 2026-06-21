@@ -214,7 +214,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \"startDate\": \"{{ $today.minus({ months: 12 }).toFormat('yyyy-MM-dd') }}\", \"endDate\": \"{{ $today.toFormat('yyyy-MM-dd') }}\", \"timeUnit\": \"month\", \"keywordGroups\": [ { \"groupName\": \"{keyword}\", \"keywords\": [\"{keyword}\"] } ] }",
+        "jsonBody": "={ \"startDate\": \"{{ new Date(Date.now() - 31536000000).toISOString().substring(0,10) }}\", \"endDate\": \"{{ new Date().toISOString().substring(0,10) }}\", \"timeUnit\": \"month\", \"keywordGroups\": [ { \"groupName\": \"{keyword}\", \"keywords\": [\"{keyword}\"] } ] }",
         "placeholderDefinitions": {
           "values": [ { "name": "keyword", "description": "트렌드를 볼 검색 키워드", "type": "string" } ]
         },
