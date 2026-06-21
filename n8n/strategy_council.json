@@ -1,0 +1,216 @@
+{
+  "name": "전략 자문 위원회 (멀티에이전트)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "tg-trigger",
+      "name": "텔레그램 입력",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [-300, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_TELEGRAM_CRED_ID",
+          "name": "Telegram 봇"
+        }
+      }
+    },
+
+    {
+      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "id": "m1",
+      "name": "위원1 모델 (Sonnet)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [40, -120],
+      "credentials": { "anthropicApi": { "id": "REPLACE_ANTHROPIC_CRED_ID", "name": "Anthropic account" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "너는 '기획·구조화 위원'이다. 사용자의 아이디어/전략을 명확한 목표, 핵심 가설, 단계별 실행계획, 측정 가능한 KPI로 구조화한다. 모호한 것은 구체화하고 우선순위를 매겨라. 간결한 불릿으로 답하라."
+        }
+      },
+      "id": "agent1",
+      "name": "기획·구조화 위원",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [40, -300]
+    },
+
+    {
+      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "id": "m2",
+      "name": "위원2 모델 (Sonnet)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [40, 160],
+      "credentials": { "anthropicApi": { "id": "REPLACE_ANTHROPIC_CRED_ID", "name": "Anthropic account" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "너는 '현실성 검수 위원'이자 악마의 변호인이다. 아이디어의 실현 가능성, 숨은 비용, 리스크, 실패 시나리오, 검증되지 않은 가정을 냉정하게 지적한다. 칭찬은 생략하고 약점과 그 완화책을 함께 제시하라."
+        }
+      },
+      "id": "agent2",
+      "name": "현실성 검수 위원",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [40, -20]
+    },
+
+    {
+      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "id": "m3",
+      "name": "위원3 모델 (Sonnet)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [40, 440],
+      "credentials": { "anthropicApi": { "id": "REPLACE_ANTHROPIC_CRED_ID", "name": "Anthropic account" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "너는 '법률·규제 위원'이다. 공공조달·나라장터, 장애인기업/예비사회적기업 관련 법령, 계약·지식재산·개인정보 등 법적 쟁점을 식별한다. 확실치 않은 부분은 '확인 필요'로 명시하고, 이는 일반 정보일 뿐 공식 법률자문이 아님을 전제한다."
+        }
+      },
+      "id": "agent3",
+      "name": "법률·규제 위원",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [40, 260]
+    },
+
+    {
+      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "id": "m4",
+      "name": "위원4 모델 (Sonnet)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [40, 720],
+      "credentials": { "anthropicApi": { "id": "REPLACE_ANTHROPIC_CRED_ID", "name": "Anthropic account" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "너는 '확장·디자인 위원'이다. 아이디어를 더 크게/멀리 보는 확장안, 시스템 구조, UX/제품 디자인, 다음 버전 로드맵을 제안한다. 창의적이되 다른 위원들이 지적할 현실 제약과 균형을 맞춰라."
+        }
+      },
+      "id": "agent4",
+      "name": "확장·디자인 위원",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [40, 540]
+    },
+
+    {
+      "parameters": { "numberInputs": 4 },
+      "id": "merge",
+      "name": "의견 취합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [420, 260]
+    },
+    {
+      "parameters": { "aggregate": "aggregateAllItemData", "options": {} },
+      "id": "aggregate",
+      "name": "한 건으로 모으기",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [640, 260]
+    },
+
+    {
+      "parameters": { "model": "claude-opus-4-8", "options": {} },
+      "id": "synth-model",
+      "name": "총괄 모델 (Opus)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [860, 460],
+      "credentials": { "anthropicApi": { "id": "REPLACE_ANTHROPIC_CRED_ID", "name": "Anthropic account" } }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('텔레그램 입력').item.json.message.chat.id }}",
+        "contextWindowLength": 20
+      },
+      "id": "synth-memory",
+      "name": "대화 기억",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [1000, 460]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=사용자 질문:\n{{ $('텔레그램 입력').item.json.message.text }}\n\n--- 4인 위원 검토 의견 ---\n\n[기획·구조화]\n{{ $json.data[0].output }}\n\n[현실성 검수]\n{{ $json.data[1].output }}\n\n[법률·규제]\n{{ $json.data[2].output }}\n\n[확장·디자인]\n{{ $json.data[3].output }}",
+        "options": {
+          "systemMessage": "너는 전략 자문 위원회의 '총괄'이다. 4인 위원(기획·구조화 / 현실성 검수 / 법률·규제 / 확장·디자인)의 의견과 사용자의 원래 질문을 종합한다.\n\n다음 형식으로 답하라:\n1. 핵심 결론 (2~3줄)\n2. 합의점 / 쟁점(이견이 갈린 부분)\n3. 즉시 실행할 다음 액션 3가지\n4. 더 고민할 열린 질문\n\n대화체로, 사용자의 전략 파트너로서 답하라. 이전 대화 맥락을 기억해 이어서 코칭하라."
+        }
+      },
+      "id": "synth",
+      "name": "총괄 시너지 에이전트",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [860, 260]
+    },
+
+    {
+      "parameters": {
+        "chatId": "={{ $('텔레그램 입력').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "tg-send",
+      "name": "텔레그램 응답",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1180, 260],
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_TELEGRAM_CRED_ID", "name": "Telegram 봇" }
+      }
+    }
+  ],
+  "connections": {
+    "텔레그램 입력": {
+      "main": [[
+        { "node": "기획·구조화 위원", "type": "main", "index": 0 },
+        { "node": "현실성 검수 위원", "type": "main", "index": 0 },
+        { "node": "법률·규제 위원", "type": "main", "index": 0 },
+        { "node": "확장·디자인 위원", "type": "main", "index": 0 }
+      ]]
+    },
+
+    "위원1 모델 (Sonnet)": { "ai_languageModel": [[{ "node": "기획·구조화 위원", "type": "ai_languageModel", "index": 0 }]] },
+    "위원2 모델 (Sonnet)": { "ai_languageModel": [[{ "node": "현실성 검수 위원", "type": "ai_languageModel", "index": 0 }]] },
+    "위원3 모델 (Sonnet)": { "ai_languageModel": [[{ "node": "법률·규제 위원", "type": "ai_languageModel", "index": 0 }]] },
+    "위원4 모델 (Sonnet)": { "ai_languageModel": [[{ "node": "확장·디자인 위원", "type": "ai_languageModel", "index": 0 }]] },
+
+    "기획·구조화 위원": { "main": [[{ "node": "의견 취합", "type": "main", "index": 0 }]] },
+    "현실성 검수 위원": { "main": [[{ "node": "의견 취합", "type": "main", "index": 1 }]] },
+    "법률·규제 위원":   { "main": [[{ "node": "의견 취합", "type": "main", "index": 2 }]] },
+    "확장·디자인 위원": { "main": [[{ "node": "의견 취합", "type": "main", "index": 3 }]] },
+
+    "의견 취합": { "main": [[{ "node": "한 건으로 모으기", "type": "main", "index": 0 }]] },
+    "한 건으로 모으기": { "main": [[{ "node": "총괄 시너지 에이전트", "type": "main", "index": 0 }]] },
+
+    "총괄 모델 (Opus)": { "ai_languageModel": [[{ "node": "총괄 시너지 에이전트", "type": "ai_languageModel", "index": 0 }]] },
+    "대화 기억":        { "ai_memory":        [[{ "node": "총괄 시너지 에이전트", "type": "ai_memory", "index": 0 }]] },
+
+    "총괄 시너지 에이전트": { "main": [[{ "node": "텔레그램 응답", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
