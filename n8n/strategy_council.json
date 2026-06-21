@@ -200,7 +200,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "네이버 데이터랩 검색어 트렌드. 키워드의 최근 12개월 검색 관심도(수요) 변화를 월 단위로 조회한다. 시장 수요·계절성 파악용.",
+        "toolDescription": "네이버 데이터랩 검색어 트렌드. 키워드의 최근 12개월 검색 관심도(수요) 변화를 월 단위로 조회한다. 응답의 results[0].data는 [{period, ratio}] 배열이며 ratio는 기간 내 최댓값을 100으로 한 상대 검색량이다. 받은 뒤 추세(상승/하락/계절성)와 최근값을 요약해 활용하라. 오류가 나면 무시하고 다른 근거로 진행하라.",
         "method": "POST",
         "url": "https://openapi.naver.com/v1/datalab/search",
         "sendHeaders": true,
@@ -240,7 +240,7 @@
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.userMessage }}",
-        "options": { "systemMessage": "={{ $json.systemPrompt }}" }
+        "options": { "systemMessage": "={{ $json.systemPrompt }}", "returnIntermediateSteps": true }
       },
       "id": "member-agent",
       "name": "위원 (소집된 만큼 반복)",
@@ -253,7 +253,8 @@
         "assignments": {
           "assignments": [
             { "id": "l1", "name": "role", "type": "string", "value": "={{ $('명단 구성').item.json.role }}" },
-            { "id": "l2", "name": "opinion", "type": "string", "value": "={{ $json.output }}" }
+            { "id": "l2", "name": "opinion", "type": "string", "value": "={{ $json.output }}" },
+            { "id": "l3", "name": "research", "type": "string", "value": "={{ ($json.intermediateSteps || []).map(s => '· ' + (s.action?.tool || '도구') + ' → ' + JSON.stringify(s.action?.toolInput || '')).join('\\n') || '(검색 안 함)' }}" }
           ]
         },
         "options": {}
@@ -320,7 +321,8 @@
             "소집위원": "={{ $('한 건으로 모으기').first().json.data.map(d => d.role).join(', ') }}",
             "질문": "={{ $('입력 정규화').first().json.userMessage }}",
             "종합결론": "={{ $json.output }}",
-            "위원의견": "={{ $('한 건으로 모으기').first().json.data.map(d => '[' + d.role + ']\\n' + d.opinion).join('\\n\\n') }}"
+            "위원의견": "={{ $('한 건으로 모으기').first().json.data.map(d => '[' + d.role + ']\\n' + d.opinion).join('\\n\\n') }}",
+            "리서치": "={{ $('한 건으로 모으기').first().json.data.map(d => '[' + d.role + ']\\n' + (d.research || '')).join('\\n\\n') }}"
           },
           "matchingColumns": [],
           "attemptToConvertTypes": false,
