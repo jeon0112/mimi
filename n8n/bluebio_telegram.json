@@ -2,9 +2,7 @@
   "name": "블루바이오 AI 텔레그램",
   "nodes": [
     {
-      "parameters": {
-        "options": {}
-      },
+      "parameters": { "options": {} },
       "id": "8c0a4afe-19d7-4531-9fce-ba198867f0ee",
       "name": "채팅 트리거",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
@@ -39,12 +37,7 @@
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-opus-4-8",
-          "mode": "list",
-          "cachedResultName": "Claude Opus 4.8"
-        },
+        "model": { "__rl": true, "value": "claude-opus-4-8", "mode": "list", "cachedResultName": "Claude Opus 4.8" },
         "options": {}
       },
       "id": "a6725063-4351-4416-a48f-ee8e718a1887",
@@ -52,67 +45,35 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [-656, 512],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
         "rules": {
           "values": [
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "NARA", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "나라봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "NARA", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "나라봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "STORE", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "가게분석봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "STORE", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "가게분석봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "CONTENT", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "콘텐츠봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "CONTENT", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "콘텐츠봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MEDIA", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "미디어봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MEDIA", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "미디어봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MARKETING", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "마케팅봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MARKETING", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "마케팅봇"
             }
           ]
         },
-        "options": {
-          "fallbackOutput": "extra"
-        }
+        "options": { "fallbackOutput": "extra" }
       },
       "id": "e6c68caa-7785-460f-a3a1-28343f148042",
       "name": "에이전트 라우터",
@@ -123,7 +84,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.output.prompt }}\n\n당신은 🏛️ 나라봇입니다. 나라장터 입찰 전문 AI입니다.\n블루바이오(광주, 장애인기업+예비사회적기업)에 유리한 공고를 분석합니다.\n수의계약(1억 이하), 지역제한 없는 공고, 홍보물/기념품/복지용구 관련 공고를 우선 추천하세요.",
+        "text": "={{ $json.output.prompt }}\n\n당신은 🏛️ 나라봇입니다. 나라장터 입찰 전문 AI입니다.\n블루바이오(광주, 장애인기업+예비사회적기업)에 유리한 공고를 분석합니다.\n수의계약(2천만원 이하), 지역제한 없는 공고, 홍보물/기념품/복지용구 관련 공고를 우선 추천하세요.",
         "options": {}
       },
       "id": "98828a36-ba41-401a-90e8-c4ddedf132d0",
@@ -194,146 +155,75 @@
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
-        "options": {}
-      },
-      "id": "dd22ee33-ff44-aa55-bb66-cc7788990011",
-      "name": "일반봇_채팅 모델",
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [-96, 864],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "7ad62ca9-a240-49e4-8d0b-0a628d5972c0",
       "name": "나라봇 모델",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [0, 160],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-160, 0],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "d56c1321-86a0-4b76-ba24-9c25f0997dbc",
       "name": "가게분석봇 모델",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [0, 304],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-160, 160],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "743cd182-4689-443b-b085-f0ad7846b458",
       "name": "콘텐츠봇 모델",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [0, 464],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-160, 304],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "00db7d3c-bde3-41f4-995e-5870ce359e1b",
       "name": "미디어봇 모델",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [0, 608],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-160, 464],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "229c5839-2a66-46b8-8af2-6862a4fb25dc",
       "name": "마케팅봇 모델",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [0, 752],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-160, 608],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "mode": "passThrough",
-        "numberInputs": 6
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
+        "options": {}
       },
-      "id": "3cc17ea1-1e03-44d1-a47b-60aa84088b01",
-      "name": "병합",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [240, 304]
+      "id": "dd22ee33-ff44-aa55-bb66-cc7788990011",
+      "name": "일반봇_채팅 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [-160, 752],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
@@ -344,67 +234,9 @@
       "name": "텔레그램 트리거",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
-      "position": [-224, 192],
+      "position": [-448, 192],
       "webhookId": "bluebio-telegram",
-      "credentials": {
-        "telegramApi": {
-          "id": "4lpaYHGhDGFDWJmG",
-          "name": "Telegram account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $('오케스트레이터1').item.json.output.prompt || $json.message.text }}\n\n당신은 블루바이오의 친절한 AI 비서입니다. 일반적인 질문에 한국어로 답변하세요.",
-        "options": {}
-      },
-      "id": "0cf9ea63-ecf0-4270-b542-af5f5c77f1c2",
-      "name": "일반봇",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [432, 640]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
-        "options": {}
-      },
-      "id": "e1eb6206-05b7-4302-9814-480ad9ed2dba",
-      "name": "일반봇 모델",
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [336, 752],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('텔레그램 트리거').item.json.message.chat.id }}",
-        "text": "=🤖 {{ $('오케스트레이터1').item.json.output.agent }}\n\n{{ $json.output }}",
-        "additionalFields": {}
-      },
-      "id": "b84280a8-26d4-495c-9376-89b9d4d20749",
-      "name": "텔레그램 응답",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [912, 192],
-      "webhookId": "8ddbefd5-6a8f-498f-8b15-a3cf500b7ef5",
-      "credentials": {
-        "telegramApi": {
-          "id": "4lpaYHGhDGFDWJmG",
-          "name": "Telegram account 2"
-        }
-      }
+      "credentials": { "telegramApi": { "id": "4lpaYHGhDGFDWJmG", "name": "Telegram account 2" } }
     },
     {
       "parameters": {
@@ -419,7 +251,7 @@
       "name": "오케스트레이터1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [-16, 192]
+      "position": [-224, 192]
     },
     {
       "parameters": {
@@ -429,102 +261,65 @@
       "name": "구조화된 출력 파서1",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [-16, 384]
+      "position": [-224, 384]
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-opus-4-8",
-          "mode": "list",
-          "cachedResultName": "Claude Opus 4.8"
-        },
+        "model": { "__rl": true, "value": "claude-opus-4-8", "mode": "list", "cachedResultName": "Claude Opus 4.8" },
         "options": {}
       },
       "id": "b35df7c5-a6ea-41e1-a52d-15feb5208cf6",
       "name": "오케스트레이터 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [-64, 320],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [-448, 384],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
         "rules": {
           "values": [
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "NARA", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "나라봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "NARA", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "나라봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "STORE", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "가게분석봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "STORE", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "가게분석봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "CONTENT", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "콘텐츠봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "CONTENT", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "콘텐츠봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MEDIA", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "미디어봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MEDIA", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "미디어봇"
             },
             {
-              "conditions": {
-                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
-                "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MARKETING", "operator": {"type": "string", "operation": "equals"}}],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "마케팅봇"
+              "conditions": { "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1}, "conditions": [{"leftValue": "={{ $json.output.task_type }}", "rightValue": "MARKETING", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and" },
+              "renameOutput": true, "outputKey": "마케팅봇"
             }
           ]
         },
-        "options": {
-          "fallbackOutput": "extra"
-        }
+        "options": { "fallbackOutput": "extra" }
       },
       "id": "e80bb8ee-73b5-4c60-81e6-5a1cf79abbfe",
       "name": "에이전트 라우터1",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [224, 192]
+      "position": [32, 192]
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('오케스트레이터1').item.json.output.prompt }}\n\n당신은 🏛️ 나라봇입니다. 나라장터 입찰 전문 AI입니다.\n블루바이오(광주, 장애인기업+예비사회적기업)에 유리한 공고를 분석합니다.\n수의계약(1억 이하), 지역제한 없는 공고, 홍보물/기념품/복지용구 관련 공고를 우선 추천하세요.",
+        "text": "={{ $('오케스트레이터1').item.json.output.prompt }}\n\n당신은 🏛️ 나라봇입니다. 나라장터 입찰 전문 AI입니다.\n블루바이오(광주, 장애인기업+예비사회적기업)에 유리한 공고를 분석합니다.\n수의계약(2천만원 이하), 지역제한 없는 공고, 홍보물/기념품/복지용구 관련 공고를 우선 추천하세요.",
         "options": {}
       },
       "id": "642a0168-0221-4120-bdb1-3610eaa3d131",
       "name": "나라봇1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [432, -128]
+      "position": [288, -64]
     },
     {
       "parameters": {
@@ -536,7 +331,7 @@
       "name": "가게분석봇1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [432, 32]
+      "position": [288, 96]
     },
     {
       "parameters": {
@@ -548,7 +343,7 @@
       "name": "콘텐츠봇1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [432, 192]
+      "position": [288, 256]
     },
     {
       "parameters": {
@@ -560,7 +355,7 @@
       "name": "미디어봇1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [432, 336]
+      "position": [288, 416]
     },
     {
       "parameters": {
@@ -572,128 +367,105 @@
       "name": "마케팅봇1",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [432, 480]
+      "position": [288, 576]
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "promptType": "define",
+        "text": "={{ $('오케스트레이터1').item.json.output.prompt || $json.message.text }}\n\n당신은 블루바이오의 친절한 AI 비서입니다. 일반적인 질문에 한국어로 답변하세요.",
+        "options": {}
+      },
+      "id": "0cf9ea63-ecf0-4270-b542-af5f5c77f1c2",
+      "name": "일반봇",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [288, 736]
+    },
+    {
+      "parameters": {
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "5d43f958-8261-453f-a854-e06412f07e41",
       "name": "나라봇 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [336, 0],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [128, -64],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "a889f341-df30-4e57-98c3-12371b225ef2",
       "name": "가게분석봇 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [336, 160],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [128, 96],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "06f0fc41-36e2-4b15-bf66-96be54e10742",
       "name": "콘텐츠봇 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [336, 304],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [128, 256],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "2afe72c2-f40f-4e4b-b6bf-543c05209545",
       "name": "미디어봇 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [336, 448],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [128, 416],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-sonnet-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Sonnet 4.6"
-        },
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
         "options": {}
       },
       "id": "98bdb04a-b627-4269-a60c-33ab9ee8a7eb",
       "name": "마케팅봇 모델1",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
-      "position": [336, 608],
-      "credentials": {
-        "anthropicApi": {
-          "id": "CaFF2P9cjsuITG8C",
-          "name": "Anthropic account 2"
-        }
-      }
+      "position": [128, 576],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
     },
     {
       "parameters": {
-        "mode": "passThrough",
-        "numberInputs": 6
+        "model": { "__rl": true, "value": "claude-sonnet-4-6", "mode": "list", "cachedResultName": "Claude Sonnet 4.6" },
+        "options": {}
       },
-      "id": "78d999c9-94dc-4645-898d-5f3ac392dade",
-      "name": "병합1",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [704, 192]
+      "id": "e1eb6206-05b7-4302-9814-480ad9ed2dba",
+      "name": "일반봇 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [128, 736],
+      "credentials": { "anthropicApi": { "id": "CaFF2P9cjsuITG8C", "name": "Anthropic account 2" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('텔레그램 트리거').item.json.message.chat.id }}",
+        "text": "=🤖 {{ $('오케스트레이터1').item.json.output.agent }}\n\n{{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "b84280a8-26d4-495c-9376-89b9d4d20749",
+      "name": "텔레그램 응답",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [560, 336],
+      "webhookId": "8ddbefd5-6a8f-498f-8b15-a3cf500b7ef5",
+      "credentials": { "telegramApi": { "id": "4lpaYHGhDGFDWJmG", "name": "Telegram account 2" } }
     }
   ],
   "pinData": {},
@@ -720,50 +492,14 @@
         [{"node": "일반봇_채팅", "type": "main", "index": 0}]
       ]
     },
-    "나라봇 모델": {
-      "ai_languageModel": [[{"node": "나라봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "가게분석봇 모델": {
-      "ai_languageModel": [[{"node": "가게분석봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "콘텐츠봇 모델": {
-      "ai_languageModel": [[{"node": "콘텐츠봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "미디어봇 모델": {
-      "ai_languageModel": [[{"node": "미디어봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "마케팅봇 모델": {
-      "ai_languageModel": [[{"node": "마케팅봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "일반봇_채팅 모델": {
-      "ai_languageModel": [[{"node": "일반봇_채팅", "type": "ai_languageModel", "index": 0}]]
-    },
-    "나라봇": {
-      "main": [[{"node": "병합", "type": "main", "index": 0}]]
-    },
-    "가게분석봇": {
-      "main": [[{"node": "병합", "type": "main", "index": 1}]]
-    },
-    "콘텐츠봇": {
-      "main": [[{"node": "병합", "type": "main", "index": 2}]]
-    },
-    "미디어봇": {
-      "main": [[{"node": "병합", "type": "main", "index": 3}]]
-    },
-    "마케팅봇": {
-      "main": [[{"node": "병합", "type": "main", "index": 4}]]
-    },
-    "일반봇_채팅": {
-      "main": [[{"node": "병합", "type": "main", "index": 5}]]
-    },
+    "나라봇 모델": { "ai_languageModel": [[{"node": "나라봇", "type": "ai_languageModel", "index": 0}]] },
+    "가게분석봇 모델": { "ai_languageModel": [[{"node": "가게분석봇", "type": "ai_languageModel", "index": 0}]] },
+    "콘텐츠봇 모델": { "ai_languageModel": [[{"node": "콘텐츠봇", "type": "ai_languageModel", "index": 0}]] },
+    "미디어봇 모델": { "ai_languageModel": [[{"node": "미디어봇", "type": "ai_languageModel", "index": 0}]] },
+    "마케팅봇 모델": { "ai_languageModel": [[{"node": "마케팅봇", "type": "ai_languageModel", "index": 0}]] },
+    "일반봇_채팅 모델": { "ai_languageModel": [[{"node": "일반봇_채팅", "type": "ai_languageModel", "index": 0}]] },
     "텔레그램 트리거": {
       "main": [[{"node": "오케스트레이터1", "type": "main", "index": 0}]]
-    },
-    "일반봇 모델": {
-      "ai_languageModel": [[{"node": "일반봇", "type": "ai_languageModel", "index": 0}]]
-    },
-    "일반봇": {
-      "main": [[{"node": "병합1", "type": "main", "index": 5}]]
     },
     "오케스트레이터1": {
       "main": [[{"node": "에이전트 라우터1", "type": "main", "index": 0}]]
@@ -784,46 +520,22 @@
         [{"node": "일반봇", "type": "main", "index": 0}]
       ]
     },
-    "나라봇1": {
-      "main": [[{"node": "병합1", "type": "main", "index": 0}]]
-    },
-    "가게분석봇1": {
-      "main": [[{"node": "병합1", "type": "main", "index": 1}]]
-    },
-    "콘텐츠봇1": {
-      "main": [[{"node": "병합1", "type": "main", "index": 2}]]
-    },
-    "미디어봇1": {
-      "main": [[{"node": "병합1", "type": "main", "index": 3}]]
-    },
-    "마케팅봇1": {
-      "main": [[{"node": "병합1", "type": "main", "index": 4}]]
-    },
-    "나라봇 모델1": {
-      "ai_languageModel": [[{"node": "나라봇1", "type": "ai_languageModel", "index": 0}]]
-    },
-    "가게분석봇 모델1": {
-      "ai_languageModel": [[{"node": "가게분석봇1", "type": "ai_languageModel", "index": 0}]]
-    },
-    "콘텐츠봇 모델1": {
-      "ai_languageModel": [[{"node": "콘텐츠봇1", "type": "ai_languageModel", "index": 0}]]
-    },
-    "미디어봇 모델1": {
-      "ai_languageModel": [[{"node": "미디어봇1", "type": "ai_languageModel", "index": 0}]]
-    },
-    "마케팅봇 모델1": {
-      "ai_languageModel": [[{"node": "마케팅봇1", "type": "ai_languageModel", "index": 0}]]
-    },
-    "병합1": {
-      "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]]
-    }
+    "나라봇1": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "가게분석봇1": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "콘텐츠봇1": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "미디어봇1": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "마케팅봇1": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "일반봇": { "main": [[{"node": "텔레그램 응답", "type": "main", "index": 0}]] },
+    "나라봇 모델1": { "ai_languageModel": [[{"node": "나라봇1", "type": "ai_languageModel", "index": 0}]] },
+    "가게분석봇 모델1": { "ai_languageModel": [[{"node": "가게분석봇1", "type": "ai_languageModel", "index": 0}]] },
+    "콘텐츠봇 모델1": { "ai_languageModel": [[{"node": "콘텐츠봇1", "type": "ai_languageModel", "index": 0}]] },
+    "미디어봇 모델1": { "ai_languageModel": [[{"node": "미디어봇1", "type": "ai_languageModel", "index": 0}]] },
+    "마케팅봇 모델1": { "ai_languageModel": [[{"node": "마케팅봇1", "type": "ai_languageModel", "index": 0}]] },
+    "일반봇 모델": { "ai_languageModel": [[{"node": "일반봇", "type": "ai_languageModel", "index": 0}]] }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
-  "versionId": "e5ac20cf-7198-4f68-af1a-e1055784d54d",
+  "settings": { "executionOrder": "v1" },
+  "versionId": "f1ac20cf-7198-4f68-af1a-e1055784d54e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "62a87a1e33395ebb291e43276d1a7c29519789400a285b3616de09e87db2ba2f"
