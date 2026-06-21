@@ -38,7 +38,7 @@
     },
 
     {
-      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "parameters": { "model": { "__rl": true, "mode": "list", "value": "claude-sonnet-4-6", "cachedResultName": "Claude Sonnet 4.6" }, "options": {} },
       "id": "facil-model",
       "name": "사회자 모델 (Sonnet)",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
@@ -85,7 +85,7 @@
     },
 
     {
-      "parameters": { "model": "claude-sonnet-4-6", "options": {} },
+      "parameters": { "model": { "__rl": true, "mode": "list", "value": "claude-sonnet-4-6", "cachedResultName": "Claude Sonnet 4.6" }, "options": {} },
       "id": "member-model",
       "name": "위원 모델 (Sonnet)",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
@@ -266,7 +266,7 @@
     },
 
     {
-      "parameters": { "model": "claude-opus-4-8", "options": {} },
+      "parameters": { "model": { "__rl": true, "mode": "list", "value": "claude-opus-4-8", "cachedResultName": "Claude Opus 4.8" }, "options": {} },
       "id": "synth-model",
       "name": "총괄 모델 (Opus)",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
