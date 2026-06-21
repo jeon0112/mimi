@@ -11,7 +11,7 @@
       "credentials": { "telegramApi": { "id": "REPLACE_TELEGRAM_CRED_ID", "name": "Telegram 봇" } }
     },
     {
-      "parameters": { "public": true, "options": { "responseMode": "lastNode" } },
+      "parameters": { "public": true, "options": { "responseMode": "lastNode", "allowFileUploads": true } },
       "id": "web-trigger",
       "name": "웹 채팅 입력",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
@@ -21,9 +21,51 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "hasfile", "leftValue": "={{ $binary && Object.keys($binary).length > 0 }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-file",
+      "name": "파일 있나?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-560, 560]
+    },
+    {
+      "parameters": { "operation": "pdf", "binaryPropertyName": "data", "options": {} },
+      "id": "extract-pdf",
+      "name": "PDF 추출",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-380, 620]
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "n1", "name": "userMessage", "type": "string", "value": "={{ $json.message?.text ?? $json.chatInput }}" },
+            { "id": "fm1", "name": "chatInput", "type": "string", "value": "={{ $('웹 채팅 입력').item.json.chatInput }}" },
+            { "id": "fm2", "name": "sessionId", "type": "string", "value": "={{ $('웹 채팅 입력').item.json.sessionId }}" },
+            { "id": "fm3", "name": "fileText", "type": "string", "value": "={{ $json.text }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "file-merge",
+      "name": "질문+파일 합치기",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-200, 620]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "n1", "name": "userMessage", "type": "string", "value": "={{ ($json.message?.text ?? $json.chatInput ?? '') + ($json.fileText ? '\\n\\n[첨부 파일 내용]\\n' + $json.fileText : '') }}" },
             { "id": "n2", "name": "sessionId", "type": "string", "value": "={{ String($json.message?.chat?.id ?? $json.sessionId) }}" },
             { "id": "n3", "name": "channel", "type": "string", "value": "={{ $json.message ? 'telegram' : 'web' }}" }
           ]
@@ -370,7 +412,15 @@
   ],
   "connections": {
     "텔레그램 입력": { "main": [[{ "node": "입력 정규화", "type": "main", "index": 0 }]] },
-    "웹 채팅 입력":   { "main": [[{ "node": "입력 정규화", "type": "main", "index": 0 }]] },
+    "웹 채팅 입력":   { "main": [[{ "node": "파일 있나?", "type": "main", "index": 0 }]] },
+    "파일 있나?": {
+      "main": [
+        [{ "node": "PDF 추출", "type": "main", "index": 0 }],
+        [{ "node": "입력 정규화", "type": "main", "index": 0 }]
+      ]
+    },
+    "PDF 추출": { "main": [[{ "node": "질문+파일 합치기", "type": "main", "index": 0 }]] },
+    "질문+파일 합치기": { "main": [[{ "node": "입력 정규화", "type": "main", "index": 0 }]] },
 
     "입력 정규화": { "main": [[{ "node": "사회자", "type": "main", "index": 0 }]] },
 
