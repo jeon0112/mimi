@@ -26,10 +26,18 @@
 
 | 도구 | 종류 | 용도 |
 |------|------|------|
-| 네이버 뉴스/블로그/쇼핑/웹문서 검색 | 네이버 Open API (GET) | 동향·후기·가격대·자료 |
-| 네이버 데이터랩 트렌드 | 네이버 Open API (POST) | 검색어 관심도(수요·계절성) 12개월 추이 |
-| 웹검색 (SerpAPI) | SerpAPI 빌트인 노드 | 광범위·해외 정보 (구글 검색) |
-| 계산기 | 빌트인 | CAC·LTV 등 수치 계산 |
+| naver_news / naver_blog / naver_shop / naver_web | 네이버 Open API (GET) | 동향·후기·가격대·자료 |
+| naver_datalab | 네이버 Open API (POST) | 검색어 관심도(수요·계절성) 12개월 추이 |
+| calculator | 빌트인 | CAC·LTV 등 수치 계산 |
+
+> ⚠️ **도구 노드 이름은 반드시 영문(ASCII)**으로 둘 것. n8n이 LLM에 넘기는 도구 이름은
+> 노드 이름을 ASCII로 변환해 만드는데, 한글 이름은 전부 `_`로 뭉개져 "multiple tools
+> with the same name '_'" 충돌이 난다. 그래서 이 도구들은 `naver_news` 식 영문 이름을 쓴다.
+>
+> **광범위 웹검색(SerpAPI/Tavily)**은 키가 필요해 기본 포함하지 않았다. 추가하려면:
+> SerpAPI 빌트인 툴 노드(자격증명 필요) 또는 `toolHttpRequest`로 Tavily(POST
+> `https://api.tavily.com/search`, 헤더 `Authorization: Bearer <키>`)를 만들어
+> `위원`에 `ai_tool`로 연결. 노드 이름은 영문으로.
 
 - **네이버 인증**: 검색/데이터랩 노드 헤더의 `X-Naver-Client-Id / X-Naver-Client-Secret`을
   `={{ $env.NAVER_CLIENT_ID }}` / `={{ $env.NAVER_CLIENT_SECRET }}`로 읽음.
