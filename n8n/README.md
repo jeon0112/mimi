@@ -21,15 +21,27 @@
 
 ## 위원 리서치 도구 (네이버 검색)
 
-`위원` 에이전트에 네이버 Open API 검색 도구 4종 + 계산기를 붙였다.
+`위원` 에이전트에 검색/리서치 도구 6종 + 계산기를 붙였다.
 마케팅·재무 위원이 소집되면 추측 대신 **실제 시장·경쟁사·가격·트렌드 데이터를 직접 조사**한다.
 
-- 도구: 뉴스 / 블로그 / 쇼핑 / 웹문서 검색, 계산기(CAC·LTV 등 수치 계산)
-- 인증: 각 검색 노드 헤더에 `X-Naver-Client-Id / X-Naver-Client-Secret`을
-  `={{ $env.NAVER_CLIENT_ID }}` / `={{ $env.NAVER_CLIENT_SECRET }}`로 읽음
-  - n8n에서 환경변수 접근이 막혀 있으면(`N8N_BLOCK_ENV_ACCESS_IN_NODE=true`),
-    값을 직접 입력하거나 **HTTP Custom Auth 자격증명**으로 두 헤더를 넣어라.
-- 키 발급: 네이버 개발자센터에서 애플리케이션 등록 → 검색 API 사용 설정.
+| 도구 | 종류 | 용도 |
+|------|------|------|
+| 네이버 뉴스/블로그/쇼핑/웹문서 검색 | 네이버 Open API (GET) | 동향·후기·가격대·자료 |
+| 네이버 데이터랩 트렌드 | 네이버 Open API (POST) | 검색어 관심도(수요·계절성) 12개월 추이 |
+| 웹검색 (SerpAPI) | SerpAPI 빌트인 노드 | 광범위·해외 정보 (구글 검색) |
+| 계산기 | 빌트인 | CAC·LTV 등 수치 계산 |
+
+- **네이버 인증**: 검색/데이터랩 노드 헤더의 `X-Naver-Client-Id / X-Naver-Client-Secret`을
+  `={{ $env.NAVER_CLIENT_ID }}` / `={{ $env.NAVER_CLIENT_SECRET }}`로 읽음.
+  - 환경변수 접근이 막혀 있으면(`N8N_BLOCK_ENV_ACCESS_IN_NODE=true`) 값을 직접 입력하거나
+    **HTTP Custom Auth 자격증명**으로 두 헤더를 넣어라.
+  - 키 발급: 네이버 개발자센터에서 애플리케이션 등록 → 검색 API + 데이터랩 사용 설정.
+- **SerpAPI**: serpapi.com에서 API 키 발급 → n8n `SerpApi` 자격증명 생성 →
+  `웹검색 (SerpAPI)` 노드에 선택 (`REPLACE_SERPAPI_CRED_ID`).
+  - Tavily를 쓰려면 이 노드를 `toolHttpRequest`(POST `https://api.tavily.com/search`,
+    헤더 `Authorization: Bearer <키>`, 본문 `{"query":"{query}","max_results":5}`)로 교체.
+- 데이터랩 트렌드 노드는 POST 본문에 n8n 표현식(날짜)과 `{keyword}` 플레이스홀더가
+  함께 들어가므로, import 후 한 번 실행해 응답이 정상인지 확인 권장.
 
 ### 왜 이 구조인가 (노드 안 꼬임)
 - 위원마다 노드를 만들지 않는다. **위원 에이전트는 단 1개**, 소집된 위원 수만큼 자동 반복.
