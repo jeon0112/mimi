@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""한국 주식 투자 분석 에이전트 (KRX)"""
+"""한국 주식 투자 분석 에이전트 (KRX)
+GLM-5.2 (의도 파악) + Claude Opus (데이터 수집 & 심층 분석) 듀얼 모델
+"""
 
 import json
 import os
 import sys
 from dotenv import load_dotenv
 import anthropic
+from zhipuai import ZhipuAI
 
 from tools import (
     fetch_stock_info,
@@ -96,7 +99,21 @@ TOOL_FUNCTIONS = {
     "fetch_sector_performance": fetch_sector_performance,
 }
 
-SYSTEM_PROMPT = """당신은 한국 주식 시장(KRX) 전문 투자 분석 에이전트입니다.
+GLM_SYSTEM_PROMPT = """당신은 사용자의 한국 주식 투자 관련 질문을 분석하는 전처리 에이전트입니다.
+
+사용자 질문을 읽고 다음을 JSON으로 반환하세요:
+{
+  "intent": "종목분석|시장현황|종목검색|포트폴리오|기타",
+  "tickers": ["종목코드 또는 종목명 리스트, 없으면 빈 배열"],
+  "analysis_types": ["technical|fundamental|market|ranking 중 필요한 것들"],
+  "market": "KOSPI|KOSDAQ|전체|null",
+  "summary": "질문 핵심을 한 문장으로 요약",
+  "refined_query": "분석 에이전트에게 전달할 명확하고 구체적인 질문"
+}
+
+JSON만 반환하고 다른 텍스트는 포함하지 마세요."""
+
+CLAUDE_SYSTEM_PROMPT = """당신은 한국 주식 시장(KRX) 전문 투자 분석 에이전트입니다.
 
 pykrx를 통해 실시간 KRX 데이터를 조회하고, 다음을 수행합니다:
 1. **기술적 분석**: RSI, MACD, 이동평균선을 활용한 매매 신호 분석
@@ -114,6 +131,28 @@ pykrx를 통해 실시간 KRX 데이터를 조회하고, 다음을 수행합니�
 투자는 최종적으로 투자자 본인의 판단과 책임임을 안내하세요."""
 
 
+def parse_intent(glm_client: ZhipuAI, user_input: str) -> dict:
+    """GLM-5.2로 사용자 질문 의도 파악"""
+    response = glm_client.chat.completions.create(
+        model="glm-5.2",
+        messages=[
+            {"role": "system", "content": GLM_SYSTEM_PROMPT},
+            {"role": "user", "content": user_input},
+        ],
+        temperature=0.1,
+    )
+    raw = response.choices[0].message.content.strip()
+    # 마크다운 코드블록 제거
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"refined_query": user_input, "summary": user_input}
+
+
 def run_tool(name: str, inputs: dict) -> str:
     fn = TOOL_FUNCTIONS.get(name)
     if not fn:
@@ -122,24 +161,23 @@ def run_tool(name: str, inputs: dict) -> str:
     return json.dumps(result, ensure_ascii=False, default=str)
 
 
-def chat(client: anthropic.Anthropic, messages: list, user_input: str) -> str:
-    messages.append({"role": "user", "content": user_input})
+def analyze(claude_client: anthropic.Anthropic, messages: list, query: str) -> str:
+    """Claude Opus로 tool use 기반 심층 분석"""
+    messages.append({"role": "user", "content": query})
 
     while True:
-        response = client.messages.create(
+        response = claude_client.messages.create(
             model="claude-opus-4-8",
             max_tokens=8096,
             thinking={"type": "adaptive"},
-            system=SYSTEM_PROMPT,
+            system=CLAUDE_SYSTEM_PROMPT,
             tools=TOOL_DEFINITIONS,
             messages=messages,
         )
 
-        # 응답을 메시지 히스토리에 추가
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
-            # 텍스트 응답 추출
             for block in response.content:
                 if block.type == "text":
                     return block.text
@@ -156,7 +194,6 @@ def chat(client: anthropic.Anthropic, messages: list, user_input: str) -> str:
                         "tool_use_id": block.id,
                         "content": result,
                     })
-
             messages.append({"role": "user", "content": tool_results})
         else:
             break
@@ -164,18 +201,41 @@ def chat(client: anthropic.Anthropic, messages: list, user_input: str) -> str:
     return ""
 
 
+def chat(glm_client: ZhipuAI, claude_client: anthropic.Anthropic, messages: list, user_input: str) -> str:
+    print("  [GLM-5.2] 질문 분석 중...")
+    intent = parse_intent(glm_client, user_input)
+
+    summary = intent.get("summary", "")
+    refined_query = intent.get("refined_query", user_input)
+    analysis_types = intent.get("analysis_types", [])
+
+    if summary:
+        print(f"  [GLM-5.2] 파악: {summary}")
+    if analysis_types:
+        print(f"  [GLM-5.2] 필요 분석: {', '.join(analysis_types)}")
+
+    print("  [Claude Opus] 데이터 수집 및 분석 시작...")
+    return analyze(claude_client, messages, refined_query)
+
+
 def main():
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    glm_key = os.getenv("GLM_API_KEY")
+
+    if not anthropic_key:
         print("오류: ANTHROPIC_API_KEY 환경 변수를 설정하세요.")
-        print("  .env 파일을 생성하고 ANTHROPIC_API_KEY=your_key_here 를 추가하세요.")
+        sys.exit(1)
+    if not glm_key:
+        print("오류: GLM_API_KEY 환경 변수를 설정하세요.")
         sys.exit(1)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    claude_client = anthropic.Anthropic(api_key=anthropic_key)
+    glm_client = ZhipuAI(api_key=glm_key)
     messages = []
 
     print("=" * 60)
     print("  한국 주식 투자 분석 에이전트 (KRX)")
+    print("  GLM-5.2 + Claude Opus 듀얼 모델")
     print("=" * 60)
     print("종목 분석, 추천, 시장 현황 등을 물어보세요.")
     print("종료하려면 'quit' 또는 'exit'을 입력하세요.\n")
@@ -196,10 +256,8 @@ def main():
 
         print()
         try:
-            response = chat(client, messages, user_input)
+            response = chat(glm_client, claude_client, messages, user_input)
             print(f"에이전트:\n{response}\n")
-        except anthropic.APIError as e:
-            print(f"API 오류: {e}\n")
         except Exception as e:
             print(f"오류 발생: {e}\n")
 
