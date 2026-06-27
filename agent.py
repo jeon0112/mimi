@@ -8,7 +8,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import anthropic
-from zhipuai import ZhipuAI
+import requests
 
 from tools import (
     fetch_stock_info,
@@ -131,17 +131,23 @@ pykrx를 통해 실시간 KRX 데이터를 조회하고, 다음을 수행합니�
 투자는 최종적으로 투자자 본인의 판단과 책임임을 안내하세요."""
 
 
-def parse_intent(glm_client: ZhipuAI, user_input: str) -> dict:
+def parse_intent(glm_api_key: str, user_input: str) -> dict:
     """GLM-5.2로 사용자 질문 의도 파악"""
-    response = glm_client.chat.completions.create(
-        model="glm-5.2",
-        messages=[
-            {"role": "system", "content": GLM_SYSTEM_PROMPT},
-            {"role": "user", "content": user_input},
-        ],
-        temperature=0.1,
+    resp = requests.post(
+        "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+        headers={"Authorization": f"Bearer {glm_api_key}"},
+        json={
+            "model": "glm-5.2",
+            "messages": [
+                {"role": "system", "content": GLM_SYSTEM_PROMPT},
+                {"role": "user", "content": user_input},
+            ],
+            "temperature": 0.1,
+        },
+        timeout=30,
     )
-    raw = response.choices[0].message.content.strip()
+    resp.raise_for_status()
+    raw = resp.json()["choices"][0]["message"]["content"].strip()
     # 마크다운 코드블록 제거
     if raw.startswith("```"):
         raw = raw.split("```")[1]
@@ -201,9 +207,9 @@ def analyze(claude_client: anthropic.Anthropic, messages: list, query: str) -> s
     return ""
 
 
-def chat(glm_client: ZhipuAI, claude_client: anthropic.Anthropic, messages: list, user_input: str) -> str:
+def chat(glm_api_key: str, claude_client: anthropic.Anthropic, messages: list, user_input: str) -> str:
     print("  [GLM-5.2] 질문 분석 중...")
-    intent = parse_intent(glm_client, user_input)
+    intent = parse_intent(glm_api_key, user_input)
 
     summary = intent.get("summary", "")
     refined_query = intent.get("refined_query", user_input)
@@ -230,7 +236,6 @@ def main():
         sys.exit(1)
 
     claude_client = anthropic.Anthropic(api_key=anthropic_key)
-    glm_client = ZhipuAI(api_key=glm_key)
     messages = []
 
     print("=" * 60)
@@ -256,7 +261,7 @@ def main():
 
         print()
         try:
-            response = chat(glm_client, claude_client, messages, user_input)
+            response = chat(glm_key, claude_client, messages, user_input)
             print(f"에이전트:\n{response}\n")
         except Exception as e:
             print(f"오류 발생: {e}\n")
