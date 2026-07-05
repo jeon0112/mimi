@@ -10,6 +10,9 @@ from email.mime.text import MIMEText
 from datetime import datetime
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
