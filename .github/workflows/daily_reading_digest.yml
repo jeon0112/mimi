@@ -1,0 +1,29 @@
+name: 아침 읽을거리 큐레이션
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # 매일 UTC 23:00 = 한국 오전 8시 (KST = UTC+9)
+  workflow_dispatch:        # 수동 실행 버튼
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: pip install requests
+
+      - name: 오피니언 칼럼 + 핫 뉴스 수집 및 발송
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python reading_digest.py
