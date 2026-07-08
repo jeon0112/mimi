@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>미미 스튜디오 — 소상공인 SNS·영상 자동 발행</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: #e7e7e4;
+    --border-strong: #d9d9d5;
+    --text: #18181b;
+    --text-2: #52525b;
+    --text-3: #8e8e93;
+    --accent: #18181b;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04);
+    --shadow-hover: 0 6px 20px rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101012;
+      --surface: #18181b;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --text: #fafafa;
+      --text-2: #b3b3b8;
+      --text-3: #77777e;
+      --accent: #fafafa;
+      --shadow: 0 1px 2px rgba(0,0,0,.3);
+      --shadow-hover: 0 6px 20px rgba(0,0,0,.45);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+      "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ── 사이드바 ─────────────────────────── */
+  .sidebar {
+    width: 248px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 10px 16px;
+  }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, #ffd7a8, #ff9db0 55%, #b79bff);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 14px; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+  .brand-name { font-weight: 700; font-size: 15px; }
+  .brand-sub { font-size: 11px; color: var(--text-3); display: block; margin-top: -2px; }
+
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: var(--text-3);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .search kbd {
+    margin-left: auto; font-size: 10px; font-family: inherit;
+    border: 1px solid var(--border-strong); border-radius: 5px;
+    padding: 1px 5px; color: var(--text-3);
+  }
+
+  .nav-label {
+    font-size: 11px; font-weight: 600; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: 14px 10px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    font-size: 13.5px; font-weight: 500;
+    color: var(--text-2);
+    transition: background .12s;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--bg); color: var(--text); font-weight: 600; }
+  .nav-item .ico { width: 18px; text-align: center; font-size: 15px; }
+  .nav-item .tag {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: linear-gradient(135deg, #ff9db0, #b79bff);
+    color: #fff; border-radius: 99px; padding: 1px 7px;
+  }
+
+  .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+  .user {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: 9px;
+  }
+  .user:hover { background: var(--bg); }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #a8e6cf, #7fd8ff);
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #1a4d3f;
+  }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-plan { font-size: 11px; color: var(--text-3); }
+
+  /* ── 메인 ─────────────────────────────── */
+  .main { flex: 1; min-width: 0; }
+  .main-inner { max-width: 1040px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  .topline {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .workspace { font-size: 13px; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #34c759; display: inline-block; }
+  .top-actions { display: flex; gap: 8px; }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 9px;
+    padding: 7px 14px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-2);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .btn.primary {
+    background: var(--accent); color: var(--surface); border-color: var(--accent);
+  }
+
+  .greeting { text-align: center; margin-bottom: 28px; }
+  .greeting h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .greeting p { color: var(--text-2); font-size: 14.5px; margin-top: 6px; }
+
+  /* 빠른 만들기 바 */
+  .quickbar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 10px 10px 18px;
+    box-shadow: var(--shadow);
+    max-width: 640px; margin: 0 auto 48px;
+    transition: box-shadow .15s, border-color .15s;
+  }
+  .quickbar:focus-within { border-color: var(--border-strong); box-shadow: var(--shadow-hover); }
+  .quickbar input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    font: inherit; font-size: 14.5px; color: var(--text);
+    min-width: 0;
+  }
+  .quickbar input::placeholder { color: var(--text-3); }
+  .quickbar .go {
+    background: var(--accent); color: var(--surface);
+    border: 0; border-radius: 11px;
+    padding: 9px 18px; font-size: 13.5px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* 섹션 헤더 */
+  .section { margin-bottom: 48px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-head h2 { font-size: 16px; font-weight: 700; }
+  .section-head a { font-size: 13px; color: var(--text-3); font-weight: 500; }
+  .section-head a:hover { color: var(--text); }
+
+  /* 기능 카드 그리드 */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    transition: box-shadow .15s, transform .15s, border-color .15s;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+  }
+  .card-ico {
+    width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 19px;
+  }
+  .g-mint  { background: linear-gradient(135deg, #d4f5e4, #a8e6cf); }
+  .g-peach { background: linear-gradient(135deg, #ffe8cc, #ffc9a3); }
+  .g-lav   { background: linear-gradient(135deg, #e8dfff, #c9b8ff); }
+  .g-sky   { background: linear-gradient(135deg, #d6efff, #a3d9ff); }
+  .g-rose  { background: linear-gradient(135deg, #ffe0e8, #ffb3c6); }
+  .g-lemon { background: linear-gradient(135deg, #fff4c2, #ffe28a); }
+  .card h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .card p { font-size: 13px; color: var(--text-2); line-height: 1.45; }
+
+  /* 템플릿 가로 스크롤 */
+  .tpl-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 220px;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+  }
+  .tpl {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: box-shadow .15s, transform .15s;
+  }
+  .tpl:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .tpl-thumb {
+    height: 110px;
+    display: grid; place-items: center;
+    font-size: 34px;
+  }
+  .t1 { background: linear-gradient(135deg, #ffd7a8, #ff9db0); }
+  .t2 { background: linear-gradient(135deg, #a8e6cf, #7fd8ff); }
+  .t3 { background: linear-gradient(135deg, #c9b8ff, #7fb4ff); }
+  .t4 { background: linear-gradient(135deg, #ffe28a, #ffb37f); }
+  .t5 { background: linear-gradient(135deg, #ffb3c6, #c9b8ff); }
+  .tpl-body { padding: 12px 14px 14px; }
+  .tpl-body h3 { font-size: 13.5px; font-weight: 700; }
+  .tpl-body p { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+  /* 최근 콘텐츠 리스트 */
+  .list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: var(--bg); }
+  .row-ico {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 16px;
+  }
+  .row-title { font-size: 13.5px; font-weight: 600; }
+  .row-meta { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+  .row-right { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .status {
+    font-size: 11.5px; font-weight: 700;
+    border-radius: 99px; padding: 3px 10px;
+    display: inline-block;
+  }
+  .st-done { background: rgba(52,199,89,.12); color: #1e9e4a; }
+  .st-wait { background: rgba(255,159,10,.14); color: #c77700; }
+  .st-draft { background: rgba(142,142,147,.14); color: var(--text-2); }
+  @media (prefers-color-scheme: dark) {
+    .st-done { color: #4cd471; }
+    .st-wait { color: #ffb340; }
+  }
+  .row-time { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+
+  /* 반응형 */
+  .menu-btn { display: none; }
+  @media (max-width: 860px) {
+    .sidebar { display: none; }
+    .main-inner { padding: 24px 18px 60px; }
+    .topline { margin-bottom: 24px; }
+    .greeting h1 { font-size: 22px; }
+    .menu-btn {
+      display: grid; place-items: center;
+      width: 36px; height: 36px;
+      border: 1px solid var(--border); border-radius: 9px;
+      background: var(--surface); font-size: 16px;
+    }
+    .row-right .status { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">미</div>
+      <div>
+        <span class="brand-name">미미 스튜디오</span>
+        <span class="brand-sub">사장님의 콘텐츠 비서</span>
+      </div>
+    </div>
+
+    <div class="search">🔍 검색 <kbd>⌘K</kbd></div>
+
+    <a class="nav-item active" href="#"><span class="ico">🏠</span> 홈</a>
+    <a class="nav-item" href="#"><span class="ico">🔔</span> 알림</a>
+
+    <div class="nav-label">만들기</div>
+    <a class="nav-item" href="#"><span class="ico">✍️</span> SNS 글 발행</a>
+    <a class="nav-item" href="#"><span class="ico">🎬</span> 동영상 제작</a>
+    <a class="nav-item" href="#"><span class="ico">📱</span> 쇼츠 · 릴스 <span class="tag">NEW</span></a>
+    <a class="nav-item" href="#"><span class="ico">💬</span> AI 문구 생성</a>
+
+    <div class="nav-label">관리</div>
+    <a class="nav-item" href="#"><span class="ico">🗂️</span> 콘텐츠 보관함</a>
+    <a class="nav-item" href="#"><span class="ico">📅</span> 발행 캘린더</a>
+    <a class="nav-item" href="#"><span class="ico">🔗</span> 채널 연결</a>
+    <a class="nav-item" href="#"><span class="ico">📊</span> 성과 리포트</a>
+
+    <div class="sidebar-footer">
+      <a class="nav-item" href="#"><span class="ico">⚙️</span> 설정</a>
+      <div class="user">
+        <div class="avatar">사</div>
+        <div>
+          <div class="user-name">우리가게 사장님</div>
+          <div class="user-plan">스타터 플랜</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="main">
+    <div class="main-inner">
+
+      <div class="topline">
+        <div class="workspace"><button class="menu-btn">☰</button><span class="dot"></span> 우리가게 워크스페이스</div>
+        <div class="top-actions">
+          <button class="btn">피드백</button>
+          <button class="btn primary">+ 새 콘텐츠</button>
+        </div>
+      </div>
+
+      <div class="greeting">
+        <h1>안녕하세요, 사장님 👋</h1>
+        <p>오늘은 어떤 소식을 손님들께 알릴까요? 글과 영상, 발행까지 미미가 해드릴게요.</p>
+      </div>
+
+      <div class="quickbar">
+        <input type="text" placeholder="예: 이번 주 신메뉴 딸기라떼 홍보 글이랑 15초 영상 만들어줘">
+        <button class="go">만들기</button>
+      </div>
+
+      <!-- 기능 카드 -->
+      <section class="section">
+        <div class="section-head">
+          <h2>무엇이든 만들어보세요</h2>
+          <a href="#">전체 보기 →</a>
+        </div>
+        <div class="cards">
+          <a class="card" href="#">
+            <div class="card-ico g-mint">✍️</div>
+            <div>
+              <h3>SNS 글 자동 발행</h3>
+              <p>인스타그램·네이버 블로그·페이스북에 매일 알아서 올라가요.</p>
+            </div>
+          </a>
+          <a class="card" href="#">
+            <div class="card-ico g-peach">🎬</div>
+            <div>
+              <h3>맞춤 동영상 제작</h3>
+              <p>가게 사진 몇 장이면 우리 가게 스타일의 홍보 영상 완성.</p>
+            </div>
+          </a>
+          <a class="card" href="#">
+            <div class="card-ico g-lav">📱</div>
+            <div>
+              <h3>쇼츠 · 릴스 변환</h3>
+              <p>긴 영상을 짧게 잘라 유튜브 쇼츠와 릴스에 자동 배포해요.</p>
+            </div>
+          </a>
+          <a class="card" href="#">
+            <div class="card-ico g-sky">💬</div>
+            <div>
+              <h3>AI 문구 생성</h3>
+              <p>우리 가게 말투 그대로, 캡션과 해시태그를 만들어드려요.</p>
+            </div>
+          </a>
+          <a class="card" href="#">
+            <div class="card-ico g-lemon">📅</div>
+            <div>
+              <h3>예약 발행 캘린더</h3>
+              <p>일주일치 콘텐츠를 미리 만들어두면 정해진 시간에 발행.</p>
+            </div>
+          </a>
+          <a class="card" href="#">
+            <div class="card-ico g-rose">🔗</div>
+            <div>
+              <h3>채널 연결</h3>
+              <p>인스타그램, 유튜브, 네이버 블로그, 카카오채널 한 번에.</p>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- 템플릿 -->
+      <section class="section">
+        <div class="section-head">
+          <h2>업종별 인기 템플릿</h2>
+          <a href="#">템플릿 라이브러리 →</a>
+        </div>
+        <div class="tpl-row">
+          <a class="tpl" href="#">
+            <div class="tpl-thumb t1">☕</div>
+            <div class="tpl-body"><h3>카페 신메뉴 소개</h3><p>릴스 15초 · 인스타 피드</p></div>
+          </a>
+          <a class="tpl" href="#">
+            <div class="tpl-thumb t2">🍜</div>
+            <div class="tpl-body"><h3>식당 오늘의 메뉴</h3><p>매일 자동 발행 · 스토리</p></div>
+          </a>
+          <a class="tpl" href="#">
+            <div class="tpl-thumb t3">💇</div>
+            <div class="tpl-body"><h3>미용실 시술 전후</h3><p>비포애프터 영상 · 쇼츠</p></div>
+          </a>
+          <a class="tpl" href="#">
+            <div class="tpl-thumb t4">🏷️</div>
+            <div class="tpl-body"><h3>세일 · 이벤트 공지</h3><p>전 채널 동시 발행</p></div>
+          </a>
+          <a class="tpl" href="#">
+            <div class="tpl-thumb t5">🎁</div>
+            <div class="tpl-body"><h3>단골 감사 이벤트</h3><p>카카오채널 · 인스타</p></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- 최근 콘텐츠 -->
+      <section class="section">
+        <div class="section-head">
+          <h2>최근 콘텐츠</h2>
+          <a href="#">보관함 →</a>
+        </div>
+        <div class="list">
+          <div class="row">
+            <div class="row-ico g-peach">🎬</div>
+            <div>
+              <div class="row-title">여름 신메뉴 딸기라떼 홍보 영상 (15초)</div>
+              <div class="row-meta">인스타그램 릴스 · 유튜브 쇼츠</div>
+            </div>
+            <div class="row-right">
+              <span class="status st-done">발행 완료</span>
+              <div class="row-time">오늘 오전 10:00</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-ico g-mint">✍️</div>
+            <div>
+              <div class="row-title">주말 영업시간 안내 게시글</div>
+              <div class="row-meta">네이버 블로그 · 인스타그램 피드</div>
+            </div>
+            <div class="row-right">
+              <span class="status st-wait">발행 예약</span>
+              <div class="row-time">내일 오전 9:00</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-ico g-lav">📱</div>
+            <div>
+              <div class="row-title">매장 인테리어 소개 쇼츠</div>
+              <div class="row-meta">유튜브 쇼츠</div>
+            </div>
+            <div class="row-right">
+              <span class="status st-draft">임시 저장</span>
+              <div class="row-time">어제</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-ico g-sky">💬</div>
+            <div>
+              <div class="row-title">7월 이벤트 안내 문구 12종</div>
+              <div class="row-meta">AI 문구 생성</div>
+            </div>
+            <div class="row-right">
+              <span class="status st-done">발행 완료</span>
+              <div class="row-time">2일 전</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
