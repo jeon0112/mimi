@@ -27,36 +27,26 @@ const revealObserver = new IntersectionObserver((entries) => {
 revealEls.forEach((el) => revealObserver.observe(el));
 
 // Stagger reveal within each grid/row for a nicer cascade
-document.querySelectorAll(".bento, .stats, .values-grid, .pipeline-track").forEach((group) => {
+document.querySelectorAll(".services-grid, .values-grid, .pipeline-track, .app-grid").forEach((group) => {
   [...group.children].forEach((child, i) => {
     child.style.transitionDelay = `${i * 80}ms`;
   });
 });
 
-// Count-up stats
-const countEls = document.querySelectorAll(".stat-num");
-const countObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    const el = entry.target;
-    const raw = el.dataset.count;
-    const target = parseInt(raw, 10);
-    const pad = raw.length;
-    const duration = 1200;
-    const start = performance.now();
-
-    function tick(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const value = Math.round(target * eased);
-      el.textContent = String(value).padStart(pad, "0");
-      if (progress < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-    countObserver.unobserve(el);
-  });
-}, { threshold: 0.5 });
-countEls.forEach((el) => countObserver.observe(el));
+// Hero waveform bars
+const waveBars = document.getElementById("waveBars");
+if (waveBars) {
+  const count = 26;
+  for (let i = 0; i < count; i++) {
+    const bar = document.createElement("span");
+    const height = 30 + Math.round(Math.random() * 70);
+    const delay = (Math.random() * 1.4).toFixed(2);
+    bar.style.height = `${height}%`;
+    bar.style.animationDelay = `${delay}s`;
+    waveBars.appendChild(bar);
+  }
+}
 
 // Footer year
-document.getElementById("year").textContent = new Date().getFullYear();
+const yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = new Date().getFullYear();
