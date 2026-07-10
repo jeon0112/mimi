@@ -1,27 +1,33 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>㈜블루바이오 | AI 콘텐츠 · 소프트웨어 · 공공입찰 발굴</title>
-<meta name="description" content="㈜블루바이오 - 장애인기업·예비사회적기업 인증 AI 전문기업. AI 나라장터 공모발굴, AI 콘텐츠·소프트웨어, 문화예술콘텐츠 개발.">
+<title>㈜블루바이오 | 기술이 닿는 곳, 삶이 피어나다</title>
+<meta name="description" content="㈜블루바이오 - 소상공인 AI 홍보 터미널부터 이동권·돌봄, 나라장터 원스톱, 노후시설 안전, 장애인 문화예술까지. 장애인기업·예비사회적기업 AI 전문기업.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<a href="#top" class="skip-link">본문 바로가기</a>
+
 <header class="nav" id="nav">
   <div class="nav-inner">
     <a href="#top" class="brand">
-      <span class="sphere sphere-coral brand-dot"></span>
+      <span class="sphere sphere-coral brand-dot" aria-hidden="true"></span>
       블루바이오
     </a>
-    <nav class="nav-links" id="navLinks">
-      <a href="#about">회사소개</a>
-      <a href="#services">서비스</a>
-      <a href="#system">AI 시스템</a>
-      <a href="#values">사회적 가치</a>
+    <nav class="nav-links" id="navLinks" aria-label="주요 메뉴">
+      <a href="#mobility">이동권</a>
+      <a href="#system">나라장터</a>
+      <a href="#safety">안전</a>
+      <a href="#gallery">갤러리</a>
       <a href="#contact">문의</a>
     </nav>
+    <button class="icon-btn" id="themeToggle" type="button" aria-pressed="true" aria-label="라이트 모드로 전환 (문제에서 해결로)">
+      <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.6A9 9 0 1 1 11.4 3a7 7 0 0 0 9.6 9.6Z"/></svg>
+      <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+    </button>
     <a href="#contact" class="btn btn-primary">문의하기</a>
     <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기">
       <span></span><span></span><span></span>
@@ -29,94 +35,139 @@
   </div>
 </header>
 
-<!-- Hero -->
-<section class="hero" id="top">
+<main id="top">
+<!-- Hero: AI SNS 터미널 -->
+<section class="hero">
   <div class="section-inner">
     <div class="hero-top reveal">
-      <span class="eyebrow-pill">
-        <b>새로운</b> AI 나라장터 리포트를 소개합니다
-        <span class="pill-arrow">→</span>
-      </span>
-      <h1 class="hero-title">무엇을 자동화하고 싶으세요?</h1>
-      <p class="hero-sub">
-        ㈜블루바이오는 AI로 공공입찰 기회를 발굴하고, 콘텐츠·소프트웨어·문화예술콘텐츠까지 만드는
-        장애인기업 · 예비사회적기업입니다.
+      <span class="eyebrow-pill">단 한 번의 터치로, 당신의 가게가 세상과 연결됩니다</span>
+      <h1 class="hero-title" id="heroTitle">장사하기도 바쁜 사장님,<br>홍보는 AI에게 맡기세요.</h1>
+      <p class="hero-sub" id="heroSub">
+        사진 한 장과 오늘의 분위기만 알려주세요. 블로그부터 릴스, 숏츠까지 —
+        AI가 알아서 당신의 가게를 지역 핫플레이스로 만듭니다.
       </p>
-      <div class="hero-cta">
-        <a href="#system" class="btn btn-primary">AI 시스템 살펴보기</a>
-        <a href="#contact" class="btn btn-ghost">문의하기</a>
-      </div>
+      <button class="hero-tts" id="ttsBtn" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 5V4L8 9H4Z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg>
+        <span id="ttsLabel">음성으로 듣기</span>
+      </button>
     </div>
 
-    <div class="showcase reveal">
-      <div class="show-card">
-        <div class="show-visual show-visual-wave">
-          <div class="wave-bars" id="waveBars"></div>
-        </div>
-        <h3>AI 나라장터 공모발굴</h3>
-        <p>매일 아침, 공공입찰 공고를 AI가 자동 수집·분석해 우리 회사에 맞는 기회만 골라냅니다.</p>
-      </div>
+    <div class="terminal reveal">
+      <div class="phone-frame">
+        <div class="phone-notch" aria-hidden="true"></div>
+        <div class="phone-screen">
+          <label class="field-label" for="shopName">가게 이름</label>
+          <input class="phone-input" id="shopName" type="text" placeholder="예: 우리동네 김치찌개" value="우리동네 김치찌개">
 
-      <div class="show-card">
-        <div class="show-visual show-visual-flow">
-          <div class="flow-node">📄</div>
-          <span class="flow-arrow">→</span>
-          <div class="flow-node">✨</div>
-        </div>
-        <h3>AI 콘텐츠 제작 흐름</h3>
-        <p>기획 자료를 넣으면 AI가 초안부터 완성본까지 이어서 만들어냅니다.</p>
-      </div>
+          <span class="field-label" id="photoLabel">사진 한 장</span>
+          <button type="button" class="photo-drop" id="photoDrop" aria-describedby="photoLabel">📷 사진을 올려보세요 (시뮬레이션)</button>
 
-      <div class="show-card">
-        <div class="show-visual show-visual-spheres">
-          <div class="sphere-cluster">
-            <span class="sphere sphere-violet" style="width:46px;height:46px;top:18px;left:24px;"></span>
-            <span class="sphere sphere-coral" style="width:34px;height:34px;top:66px;left:78px;"></span>
-            <span class="sphere sphere-teal" style="width:40px;height:40px;top:20px;left:110px;"></span>
-            <span class="sphere sphere-azure" style="width:30px;height:30px;top:78px;left:170px;"></span>
-            <span class="sphere sphere-ink" style="width:24px;height:24px;top:32px;left:170px;"></span>
+          <span class="field-label" id="moodLabel">오늘의 분위기</span>
+          <div class="mood-chips" role="group" aria-labelledby="moodLabel">
+            <button type="button" class="mood-chip active" data-mood="비 오는 날 · 뜨끈한 국물">☔ 비 오는 날</button>
+            <button type="button" class="mood-chip" data-mood="따뜻한 국물 한 그릇">🍲 따뜻한 국물</button>
+            <button type="button" class="mood-chip" data-mood="퇴근 후 한잔">🍻 퇴근 후 한잔</button>
           </div>
+
+          <button type="button" class="btn btn-primary btn-block" id="publishBtn">✨ AI 발행</button>
         </div>
-        <h3>다양성이 만드는 힘</h3>
-        <p>장애인기업 · 예비사회적기업으로서 다양한 관점을 기술에 담습니다.</p>
+      </div>
+
+      <div class="burst-stage" id="burstStage" aria-live="polite">
+        <div class="burst-glow" aria-hidden="true"></div>
+        <div class="result-card rc-shorts">🎬 쇼츠 완성</div>
+        <div class="result-card rc-reels">📸 릴스 완성</div>
+        <div class="result-card rc-tiktok">🎵 틱톡 완성</div>
+        <div class="result-card rc-blog">📝 블로그 완성</div>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="quick-pills reveal">
+<!-- Intro / bridge -->
+<section id="about">
+  <div class="section-inner">
+    <span class="tag reveal">TECH FOR BETTER LIFE</span>
+    <h2 class="section-title reveal intro-text">우리 주변의 가장 가까운 이웃을 돕는 AI</h2>
+    <p class="section-desc reveal intro-text">
+      골목 상권을 살리는 이 따뜻한 기술은 더 넓은 사회적 약자의 삶으로 이어집니다.
+      스크롤을 내리며 블루바이오의 AI가 만드는 변화를 하나씩 만나보세요.
+    </p>
+    <div class="story-map reveal">
+      <a href="#mobility" class="quick-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        이동권 &amp; 돌봄
+      </a>
       <a href="#system" class="quick-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
-        나라장터 발굴
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
+        나라장터 원스톱
       </a>
-      <a href="#services" class="quick-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.3"/><path d="M21 16l-5-5-4 4-3-3-3 3"/></svg>
-        AI 콘텐츠
+      <a href="#safety" class="quick-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 4.4-3.4 7.8-8 9-4.6-1.2-8-4.6-8-9V7z"/></svg>
+        노후시설 안전
       </a>
-      <a href="#services" class="quick-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg>
-        AI 소프트웨어
-      </a>
-      <a href="#services" class="quick-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-.6-.4-1.2-.8-1.7-.5-.6-.2-1.5.7-1.5H16a4 4 0 0 0 4-4c0-4.4-3.6-9-8-9Z"/><circle cx="7.6" cy="11.6" r="1.1"/><circle cx="9.6" cy="7.6" r="1.1"/><circle cx="14.6" cy="7.2" r="1.1"/></svg>
-        문화예술콘텐츠
-      </a>
-      <a href="#contact" class="quick-pill">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        추가 문의
+      <a href="#gallery" class="quick-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.3"/><path d="M21 16l-5-5-4 4-3-3-3 3"/></svg>
+        문화예술 갤러리
       </a>
     </div>
   </div>
 </section>
 
-<!-- About -->
-<section id="about">
+<!-- 이동권 & 돌봄 -->
+<section id="mobility">
   <div class="section-inner">
-    <span class="tag reveal">ABOUT BLUEBIO</span>
-    <h2 class="section-title reveal">사람이 놓치는 기회를, AI는 놓치지 않습니다.</h2>
-    <p class="section-desc reveal">
-      ㈜블루바이오는 인공지능을 중심에 둔 소셜벤처형 AI 기업입니다. 매일 새벽 나라장터 전역의 공고를
-      AI가 자동으로 수집·분석하고, AI 콘텐츠 제작과 소프트웨어 개발, 문화예술콘텐츠 기획까지 —
-      기술과 사회적 가치를 함께 만들어갑니다.
-    </p>
+    <span class="tag reveal">SOCIAL AI · 이동권 &amp; 돌봄</span>
+    <h2 class="section-title reveal">기다림을 줄이는 기술, 이동권을 넓힙니다</h2>
+    <p class="section-desc reveal">장애인 이동지원센터의 배차를 AI가 최적화해 대기 시간을 줄입니다.</p>
+
+    <div class="mobility-demo reveal" id="mobilityDemo">
+      <div>
+        <div class="chart-box">
+          <svg class="chart-before" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
+            <polyline points="0,70 30,20 60,80 90,30 120,90 150,25 180,75 210,15 240,85 270,35 300,60" fill="none" stroke="var(--coral)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="chart-after" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
+            <polyline points="0,55 30,48 60,42 90,50 120,40 150,45 180,38 210,42 240,36 270,40 300,35" fill="none" stroke="var(--teal)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="mobility-caption">불규칙했던 배차 대기가 AI 최적화를 거치며 예측 가능한 흐름으로 바뀝니다.</p>
+      </div>
+      <div>
+        <div class="mobility-number" id="mobilityNumber">
+          <span id="mobilityFrom">90</span><span class="unit">분</span>
+          <span class="arrow">→</span>
+          <span id="mobilityTo">90</span><span class="unit">분</span>
+        </div>
+        <p class="mobility-caption">기존 평균 대기시간 → AI 최적화 후 예상 대기시간 (스크롤하면 자동 계산됩니다)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 나라장터 원스톱 -->
+<section id="system">
+  <div class="section-inner">
+    <span class="tag reveal">SOCIAL AI · 공공조달</span>
+    <h2 class="section-title reveal">복잡한 나라장터 입찰, 원스톱으로 해결합니다</h2>
+    <p class="section-desc reveal">가게 홍보를 원스톱으로 하듯, 공공조달 입찰과 사업계획서도 AI가 함께합니다.</p>
+
+    <div class="match-sim reveal">
+      <span class="match-label">우리 회사는</span>
+      <select class="match-select" id="bizType">
+        <option>제조업</option>
+        <option>서비스업</option>
+        <option>도소매업</option>
+        <option>건설업</option>
+      </select>
+      <span class="match-label">입니다</span>
+      <button type="button" class="btn btn-primary btn-sm" id="matchBtn">매칭 시작</button>
+
+      <div class="match-result" id="matchResult" aria-live="polite">
+        <span class="doc-stack" aria-hidden="true"><span>📄</span><span>📄</span><span>✅</span></span>
+        <span id="matchResultText"></span>
+      </div>
+    </div>
 
     <div class="promo reveal">
       <div>
@@ -132,86 +183,68 @@
         </p>
       </div>
       <div class="promo-visual">
-        <div class="promo-blob"></div>
+        <div class="promo-blob" aria-hidden="true"></div>
         <span class="float-tag" style="top:6px; left:6px;">적격성 판단</span>
         <span class="float-tag" style="top:52px; left:120px;">낙찰가 전략</span>
         <span class="float-tag" style="top:110px; left:10px;">제안서 초안</span>
         <span class="float-tag" style="top:158px; left:130px;">수의계약 탐색</span>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- Pipeline -->
-<section id="pipeline-section">
-  <div class="section-inner">
-    <span class="tag reveal">HOW OUR AI WORKS</span>
-    <h2 class="section-title reveal">사람 대신, AI가 일하는 방식</h2>
-    <p class="section-desc reveal">매일 오전 8시, 4단계 AI 파이프라인이 자동으로 실행됩니다.</p>
 
     <div class="pipeline-track">
       <div class="pipeline-step reveal">
-        <div class="step-num">01</div>
+        <div class="step-num" aria-hidden="true">01</div>
         <h3>공고 수집</h3>
         <p>나라장터 Open API로 키워드 기반 공고를 자동 수집합니다.</p>
       </div>
-      <div class="pipeline-arrow reveal">→</div>
+      <div class="pipeline-arrow reveal" aria-hidden="true">→</div>
       <div class="pipeline-step reveal">
-        <div class="step-num">02</div>
+        <div class="step-num" aria-hidden="true">02</div>
         <h3>AI 필터링</h3>
         <p>AI가 배치 단위로 공고를 판단해 추천 · 보류 · 제외로 분류합니다.</p>
       </div>
-      <div class="pipeline-arrow reveal">→</div>
+      <div class="pipeline-arrow reveal" aria-hidden="true">→</div>
       <div class="pipeline-step reveal">
-        <div class="step-num">03</div>
+        <div class="step-num" aria-hidden="true">03</div>
         <h3>전략 분석</h3>
         <p>과거 낙찰 이력을 분석해 안정형 · 중간형 · 공격형 입찰가를 제시합니다.</p>
       </div>
-      <div class="pipeline-arrow reveal">→</div>
+      <div class="pipeline-arrow reveal" aria-hidden="true">→</div>
       <div class="pipeline-step reveal">
-        <div class="step-num">04</div>
+        <div class="step-num" aria-hidden="true">04</div>
         <h3>자동 브리핑</h3>
         <p>추천 공고와 전략 요약을 매일 아침 자동으로 전달합니다.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- Product preview (app mock) -->
-<section id="system">
-  <div class="section-inner">
-    <span class="tag reveal">INSIDE BLUEBIO</span>
-    <h2 class="section-title reveal">우리 AI 시스템을 들여다보세요</h2>
-    <p class="section-desc reveal">매일 아침, 블루바이오의 AI가 실제로 만들어내는 화면입니다.</p>
 
     <div class="app-mock reveal">
       <aside class="app-sidebar">
         <div class="app-workspace">
-          <span class="sphere sphere-coral" style="width:20px;height:20px;"></span>
+          <span class="sphere sphere-coral" style="width:20px;height:20px;" aria-hidden="true"></span>
           블루바이오
         </div>
         <nav class="app-nav">
           <a class="active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V19a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9.5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V19a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9.5"/></svg>
             대시보드
           </a>
           <a>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l1.5 3h5L16 12h4"/><path d="M4 12 5.5 5.5A1 1 0 0 1 6.46 4.7h11.08a1 1 0 0 1 .96 1.3L20 12v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h4l1.5 3h5L16 12h4"/><path d="M4 12 5.5 5.5A1 1 0 0 1 6.46 4.7h11.08a1 1 0 0 1 .96 1.3L20 12v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/></svg>
             공고함
           </a>
           <a>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg>
             전략분석
           </a>
           <a>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
             리포트
           </a>
         </nav>
         <div class="app-nav-label">고정됨</div>
         <nav class="app-nav">
           <a>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 13a7.4 7.4 0 0 0 0-2l1.8-1.5-1.8-3.1-2.2.9a7.6 7.6 0 0 0-1.7-1L15.1 4h-3.6l-.4 2.3a7.6 7.6 0 0 0-1.7 1l-2.2-.9-1.8 3.1L7.2 11a7.4 7.4 0 0 0 0 2l-1.8 1.5 1.8 3.1 2.2-.9a7.6 7.6 0 0 0 1.7 1l.4 2.3h3.6l.4-2.3a7.6 7.6 0 0 0 1.7-1l2.2.9 1.8-3.1Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 13a7.4 7.4 0 0 0 0-2l1.8-1.5-1.8-3.1-2.2.9a7.6 7.6 0 0 0-1.7-1L15.1 4h-3.6l-.4 2.3a7.6 7.6 0 0 0-1.7 1l-2.2-.9-1.8 3.1L7.2 11a7.4 7.4 0 0 0 0 2l-1.8 1.5 1.8 3.1 2.2-.9a7.6 7.6 0 0 0 1.7 1l.4 2.3h3.6l.4-2.3a7.6 7.6 0 0 0 1.7-1l2.2.9 1.8-3.1Z"/></svg>
             설정
           </a>
         </nav>
@@ -220,7 +253,7 @@
       <div class="app-main">
         <div class="app-topbar">
           <div class="app-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             공고, 기관명으로 검색...
           </div>
           <a href="#contact" class="btn btn-ghost btn-sm">문의하기</a>
@@ -241,7 +274,7 @@
         <div class="app-section-label">수의계약 우선 대상 &gt;</div>
         <div class="app-grid">
           <div class="app-card">
-            <span class="sphere sphere-coral"></span>
+            <span class="sphere sphere-coral" aria-hidden="true"></span>
             <div class="app-card-body">
               <h4>OO복지관 사무용품 구매</h4>
               <p>추정금액 1,200만원 · 물품</p>
@@ -249,7 +282,7 @@
             </div>
           </div>
           <div class="app-card">
-            <span class="sphere sphere-azure"></span>
+            <span class="sphere sphere-azure" aria-hidden="true"></span>
             <div class="app-card-body">
               <h4>OO구청 사무기기 임대</h4>
               <p>추정금액 1,850만원 · 용역</p>
@@ -257,35 +290,11 @@
             </div>
           </div>
           <div class="app-card">
-            <span class="sphere sphere-violet"></span>
+            <span class="sphere sphere-violet" aria-hidden="true"></span>
             <div class="app-card-body">
               <h4>OO기관 콘텐츠 제작 용역</h4>
               <p>추정금액 950만원 · 용역</p>
               <div class="app-tag-row"><span class="app-tag">AI 콘텐츠</span><span class="app-tag dday">D-12</span></div>
-            </div>
-          </div>
-          <div class="app-card">
-            <span class="sphere sphere-teal"></span>
-            <div class="app-card-body">
-              <h4>OO시설관리공단 소모품 구매</h4>
-              <p>추정금액 850만원 · 물품</p>
-              <div class="app-tag-row"><span class="app-tag">수의계약</span><span class="app-tag dday">D-5</span></div>
-            </div>
-          </div>
-          <div class="app-card">
-            <span class="sphere sphere-ink"></span>
-            <div class="app-card-body">
-              <h4>OO도서관 홍보영상 제작</h4>
-              <p>추정금액 1,400만원 · 용역</p>
-              <div class="app-tag-row"><span class="app-tag">AI 콘텐츠</span><span class="app-tag dday">D-9</span></div>
-            </div>
-          </div>
-          <div class="app-card">
-            <span class="sphere sphere-azure"></span>
-            <div class="app-card-body">
-              <h4>OO진흥원 데이터 구축 용역</h4>
-              <p>추정금액 1,950만원 · 용역</p>
-              <div class="app-tag-row"><span class="app-tag">수의계약</span><span class="app-tag dday">D-15</span></div>
             </div>
           </div>
         </div>
@@ -294,35 +303,95 @@
   </div>
 </section>
 
-<!-- Services -->
-<section id="services">
+<!-- 노후시설 안전 -->
+<section id="safety">
   <div class="section-inner">
-    <span class="tag reveal">SERVICES</span>
-    <h2 class="section-title reveal">AI로 확장하는 4가지 사업</h2>
-    <p class="section-desc reveal">기술과 콘텐츠, 사회적 가치를 잇는 블루바이오의 사업 영역입니다.</p>
+    <span class="tag reveal">SOCIAL AI · 안전</span>
+    <h2 class="section-title reveal">보이지 않는 위험을, 미리 찾아냅니다</h2>
+    <p class="section-desc reveal">드론과 AI로 노후 시설의 위험 요소를 사전에 감지해 지역사회 안전망을 촘촘히 다집니다.</p>
 
-    <div class="services-grid">
-      <div class="service-card reveal">
-        <span class="sphere sphere-coral"></span>
-        <h3>AI 나라장터 공모발굴</h3>
-        <p>공고 수집부터 낙찰가 전략까지, AI가 자동으로 처리합니다.</p>
+    <div class="drone-scene reveal" role="img" aria-label="드론이 시설 위 위험 지점을 스캔하며 위험(빨강) 표시를 안전(초록) 표시로 바꾸는 모습을 표현한 애니메이션">
+      <div class="risk-dot" style="top:30%; left:18%;"></div>
+      <div class="risk-dot" style="top:60%; left:38%; animation-delay:.6s;"></div>
+      <div class="risk-dot" style="top:22%; left:58%; animation-delay:1.1s;"></div>
+      <div class="risk-dot" style="top:70%; left:75%; animation-delay:1.6s;"></div>
+      <div class="risk-dot" style="top:40%; left:88%; animation-delay:2s;"></div>
+      <div class="scan-beam" aria-hidden="true"></div>
+      <div class="drone" aria-hidden="true">🛸</div>
+    </div>
+    <p class="safety-caption reveal">안타까운 사고를 기술로 미리 막습니다 — 드론 점검 데이터가 위험 지점을 실시간으로 안전 지점으로 전환합니다.</p>
+  </div>
+</section>
+
+<!-- 문화예술 디지털 갤러리 -->
+<section id="gallery">
+  <div class="section-inner">
+    <span class="tag reveal">SOCIAL AI · 문화예술</span>
+    <h2 class="section-title reveal">예술이 세상의 빛을 보는 곳</h2>
+    <p class="section-desc reveal">장애 예술가들의 작품이 디지털 갤러리를 통해 세상과 연결되고, 경제적 자립으로 이어집니다.</p>
+  </div>
+
+  <div class="gallery-track reveal" id="galleryTrack" role="list" aria-label="장애 예술가 작품 갤러리 (예시)">
+    <article class="gallery-card" role="listitem">
+      <div class="art-canvas" style="background: radial-gradient(circle at 30% 30%, #ffb08a, var(--coral) 70%);" aria-hidden="true"></div>
+      <h4>작품 01 · 색채의 순간</h4>
+      <p>따뜻한 색으로 일상을 기록한 회화 작품</p>
+      <span class="app-tag">장애 예술가 작품(예시)</span>
+    </article>
+    <article class="gallery-card" role="listitem">
+      <div class="art-canvas" style="background: radial-gradient(circle at 60% 40%, #a9c0ff, var(--azure) 70%);" aria-hidden="true"></div>
+      <h4>작품 02 · 파도의 기억</h4>
+      <p>바다를 소재로 한 디지털 드로잉</p>
+      <span class="app-tag">장애 예술가 작품(예시)</span>
+    </article>
+    <article class="gallery-card" role="listitem">
+      <div class="art-canvas" style="background: radial-gradient(circle at 40% 60%, #d7c4ff, var(--violet) 70%);" aria-hidden="true"></div>
+      <h4>작품 03 · 봄의 소리</h4>
+      <p>계절의 감각을 형태로 옮긴 조형 작품</p>
+      <span class="app-tag">장애 예술가 작품(예시)</span>
+    </article>
+    <article class="gallery-card" role="listitem">
+      <div class="art-canvas" style="background: radial-gradient(circle at 50% 30%, #9fe8d7, var(--teal) 70%);" aria-hidden="true"></div>
+      <h4>작품 04 · 도시의 리듬</h4>
+      <p>도심 풍경을 리듬감 있게 표현한 판화</p>
+      <span class="app-tag">장애 예술가 작품(예시)</span>
+    </article>
+    <article class="gallery-card" role="listitem">
+      <div class="art-canvas" style="background: radial-gradient(circle at 35% 45%, #ffd08a, var(--coral) 75%);" aria-hidden="true"></div>
+      <h4>작품 05 · 손끝의 기록</h4>
+      <p>촉각의 경험을 시각화한 텍스타일 작품</p>
+      <span class="app-tag">장애 예술가 작품(예시)</span>
+    </article>
+  </div>
+  <p class="gallery-hint">← 좌우로 스크롤해 작품을 감상해보세요 →</p>
+</section>
+
+<!-- 라이브 임팩트 대시보드 -->
+<section id="impact">
+  <div class="section-inner">
+    <span class="tag reveal">OUR IMPACT</span>
+    <h2 class="section-title reveal">기술이 만든 변화</h2>
+    <p class="section-desc reveal">블루바이오의 AI가 지금까지 만들어낸 사회적 가치입니다.</p>
+
+    <div class="impact-grid">
+      <div class="impact-card reveal">
+        <span class="impact-num" data-target="1840" id="impactNum1">0</span>
+        <p>절감된 이동지원 대기시간(시간)</p>
       </div>
-      <div class="service-card reveal">
-        <span class="sphere sphere-azure"></span>
-        <h3>AI 콘텐츠 제작</h3>
-        <p>기획부터 제작까지, AI로 완성도 높은 콘텐츠를 빠르게 만듭니다.</p>
+      <div class="impact-card reveal">
+        <span class="impact-num" data-target="182" id="impactNum2">0</span>
+        <p>지원한 공공조달 입찰(건)</p>
       </div>
-      <div class="service-card reveal">
-        <span class="sphere sphere-violet"></span>
-        <h3>AI 소프트웨어 솔루션</h3>
-        <p>업무 자동화와 맞춤형 AI 에이전트를 설계·개발합니다.</p>
+      <div class="impact-card reveal">
+        <span class="impact-num" data-target="64" id="impactNum3">0</span>
+        <p>세상에 알려진 예술 작품(점)</p>
       </div>
-      <div class="service-card reveal">
-        <span class="sphere sphere-teal"></span>
-        <h3>문화예술콘텐츠 개발</h3>
-        <p>AI 기술과 문화예술을 결합해 새로운 경험을 기획합니다.</p>
+      <div class="impact-card reveal">
+        <span class="impact-num" data-target="320" id="impactNum4">0</span>
+        <p>AI로 발행된 소상공인 홍보 콘텐츠(개)</p>
       </div>
     </div>
+    <p class="impact-note">※ 위 수치는 서비스 확장에 따라 누적되는 예시 지표이며, 실제 운영 데이터로 순차 교체될 예정입니다.</p>
   </div>
 </section>
 
@@ -333,17 +402,17 @@
     <h2 class="section-title reveal">기술로 만드는 사회적 가치</h2>
     <div class="values-grid">
       <div class="value-card reveal">
-        <span class="sphere sphere-ink"></span>
+        <span class="sphere sphere-ink" aria-hidden="true"></span>
         <h3>장애인기업</h3>
         <p>고용의 다양성과 형평성을 실천하는 인증 장애인기업입니다.</p>
       </div>
       <div class="value-card reveal">
-        <span class="sphere sphere-teal"></span>
+        <span class="sphere sphere-teal" aria-hidden="true"></span>
         <h3>예비사회적기업</h3>
         <p>사회적 가치와 지속가능한 성장을 함께 추구합니다.</p>
       </div>
       <div class="value-card reveal">
-        <span class="sphere sphere-coral"></span>
+        <span class="sphere sphere-coral" aria-hidden="true"></span>
         <h3>공공조달 상생</h3>
         <p>수의계약 우선 대상 기업으로서 공공기관과 상생하는 조달 생태계를 만듭니다.</p>
       </div>
@@ -366,11 +435,12 @@
     </div>
   </div>
 </section>
+</main>
 
 <footer class="footer">
   <div class="section-inner footer-inner">
     <div class="brand">
-      <span class="sphere sphere-coral brand-dot"></span>
+      <span class="sphere sphere-coral brand-dot" aria-hidden="true"></span>
       블루바이오
     </div>
     <p>㈜블루바이오 · 장애인기업 · 예비사회적기업</p>
