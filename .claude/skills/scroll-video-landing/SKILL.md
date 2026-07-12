@@ -115,6 +115,51 @@ description: Build an Apple-style interactive scroll-scrubbing product landing p
    - 모바일은 대역폭이 부담될 수 있다 — 프레임 수를 줄이거나(예: 60장), 스크럽 대신 자동재생 영상으로 폴백하는 것도 고려한다.
    - 부드러운 보간이 필요하면 Lenis 같은 smooth-scroll 라이브러리를 붙이거나, 프레임 인덱스 자체를 lerp(선형보간)해서 뚝뚝 끊기지 않게 한다.
 
-## 이 프로젝트(블루바이오)에 적용한다면
+## 대안: ffmpeg 프레임 추출이 불가능할 때 (video currentTime 스크럽)
 
-지금 `bluebio-website`의 "AI SNS 터미널" 히어로(폰 목업 + 버스트 애니메이션)는 CSS로 만든 시뮬레이션이다. 이 스킬을 적용하면 그 자리를 실제 생성된 제품/서비스 영상의 스크롤 스크럽으로 바꿀 수 있다 — 예를 들어 "AI가 SNS 콘텐츠를 만들어내는 과정"을 영상화해서 스크롤에 매핑하는 식. 다만 실제 생성형 이미지/영상 도구(Higgsfield 등) 연결과 크레딧이 필요하므로, 먼저 0~4단계로 사용자와 방향을 맞추고 진행 여부를 확인한다.
+Claude Code 환경에 따라 생성된 영상 파일을 직접 다운로드하지 못할 수 있다(네트워크 정책으로 생성 도구의 CDN 도메인이 막혀 있는 경우 등). 이럴 땐 프레임 시퀀스 추출 없이, `<video>` 엘리먼트의 `currentTime`을 스크롤 위치에 직접 매핑해도 동일한 스크럽 효과를 낼 수 있다 — 실전에서 검증됨.
+
+```html
+<section style="height: 280vh; position: relative;">
+  <div style="position: sticky; top: 0; height: 100vh; overflow: hidden;">
+    <video id="scrubVideo" src="영상URL" poster="대표프레임URL" muted playsinline preload="auto"></video>
+  </div>
+</section>
+```
+```js
+const scrubVideo = document.getElementById('scrubVideo');
+const track = scrubVideo.closest('section');
+let ready = false;
+scrubVideo.addEventListener('loadedmetadata', () => {
+  ready = true;
+  scrubVideo.play().then(() => scrubVideo.pause()).catch(() => {}); // 디코더 프라이밍
+});
+let ticking = false;
+function update() {
+  if (ready && scrubVideo.duration) {
+    const scrollable = track.offsetHeight - window.innerHeight;
+    const rect = track.getBoundingClientRect();
+    const progress = Math.min(Math.max(-rect.top / scrollable, 0), 1);
+    scrubVideo.currentTime = progress * scrubVideo.duration;
+  }
+  ticking = false;
+}
+window.addEventListener('scroll', () => {
+  if (!ticking) { ticking = true; requestAnimationFrame(update); }
+}, { passive: true });
+```
+
+장점: ffmpeg·프레임 저장 공간·프리로드 대기 시간이 전혀 필요 없다. 단점: 프레임 시퀀스 방식보다 미세하게 덜 매끄러울 수 있고(코덱의 키프레임 간격에 따라), 모바일 Safari에서 프로그래밍 방식 seek가 가끔 불안정하다 — 프로덕션에서는 두 방식 다 실제로 테스트해볼 것.
+
+## 이 프로젝트(블루바이오)에 적용한 사례
+
+`bluebio-website`의 브랜드 히어로(`#about` 섹션)에 실제로 적용했다. "물리적 AI가 소상공인·이동권·공공조달·안전·문화예술을 돕는다"는 컨셉으로 Higgsfield(`cinematic_studio_2_5` 이미지 모델 + `cinematic_studio_video_v2` 영상 모델)에서:
+
+1. 레퍼런스 이미지 1장(로봇 디자인 확정) → 이 이미지를 참조로 나머지 4장(섹션별 컬러 액센트: 코랄/틸/블루/바이올렛/레인보우) 생성
+2. 콘티 확정(단순 카메라 푸시인 + 제스처, 회전·분해 없음) → 사용자 컨펌
+3. 크레딧 견적(Standard 6크레딧 vs Pro 9크레딧) → 사용자가 Standard 선택
+4. 6초 히어로 영상 생성 (레퍼런스 이미지 1을 start_image로 사용)
+5. ffmpeg 프레임 추출이 네트워크 제약으로 불가능해서 → 위 "video currentTime 스크럽" 대안으로 구현
+6. 나머지 4장은 각 섹션(`#mobility`, `#system`, `#safety`, `#gallery`)의 `.section-portrait` 이미지로 배치
+
+이 순서 자체가 재사용 가능한 패턴이다: 레퍼런스 1장 → 그걸 참조로 나머지 배리에이션 생성 → 그중 하나만 영상화 → 나머지는 정적 이미지로.

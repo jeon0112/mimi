@@ -14,6 +14,36 @@ navLinks.querySelectorAll("a").forEach((a) => {
   a.addEventListener("click", () => navLinks.classList.remove("open"));
 });
 
+// 브랜드 히어로: 스크롤에 영상 currentTime을 매핑하는 스크롤 스크럽
+const scrubVideo = document.getElementById("scrubVideo");
+const scrubTrack = document.getElementById("videoScrubTrack");
+if (scrubVideo && scrubTrack && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  let videoReady = false;
+  let ticking = false;
+
+  scrubVideo.addEventListener("loadedmetadata", () => {
+    videoReady = true;
+    scrubVideo.play().then(() => scrubVideo.pause()).catch(() => {});
+  });
+
+  function updateScrub() {
+    if (videoReady && scrubVideo.duration) {
+      const scrollable = scrubTrack.offsetHeight - window.innerHeight;
+      const rect = scrubTrack.getBoundingClientRect();
+      const progress = Math.min(Math.max(-rect.top / scrollable, 0), 1);
+      scrubVideo.currentTime = progress * scrubVideo.duration;
+    }
+    ticking = false;
+  }
+
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(updateScrub);
+    }
+  }, { passive: true });
+}
+
 // Theme toggle (dark = 문제, light = 해결)
 const themeToggle = document.getElementById("themeToggle");
 const htmlEl = document.documentElement;

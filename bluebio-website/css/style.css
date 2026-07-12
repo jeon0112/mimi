@@ -145,6 +145,45 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* ---------- Hero: AI SNS 터미널 ---------- */
 .hero { padding: 148px 0 90px; }
+#about.hero { padding: 0; }
+
+/* ---------- Video-scrub brand hero ---------- */
+.video-scrub-track { position: relative; height: 280vh; }
+.video-scrub-sticky {
+  position: sticky; top: 0; height: 100vh;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink-fixed);
+}
+.video-scrub-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: brightness(.5) saturate(1.05);
+}
+.video-scrub-content {
+  position: relative; z-index: 1;
+  color: var(--cream-fixed);
+  padding-top: 96px;
+}
+.video-scrub-content .eyebrow-pill { background: var(--cream-fixed); color: var(--ink-fixed); }
+.video-scrub-content .brand-mega,
+.video-scrub-content .hero-title { color: var(--cream-fixed); }
+.video-scrub-content .hero-sub { color: color-mix(in srgb, var(--cream-fixed) 82%, transparent); }
+.video-scrub-content .quick-pill { background: color-mix(in srgb, var(--ink-fixed) 55%, transparent); border-color: rgba(255,255,255,.18); color: var(--cream-fixed); backdrop-filter: blur(6px); }
+.video-scrub-content .quick-pill:hover { border-color: rgba(255,255,255,.4); }
+.video-scrub-hint {
+  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+  z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: .2em;
+  color: var(--cream-fixed); opacity: .7;
+}
+@media (max-width: 720px) {
+  .video-scrub-track { height: 220vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-scrub-track { height: auto; }
+  .video-scrub-sticky { position: relative; height: 90vh; }
+}
 .hero-top { text-align: center; max-width: 720px; margin: 0 auto 48px; }
 .eyebrow-pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -286,6 +325,20 @@ section { position: relative; padding: 92px 0; }
 
 /* ---------- Intro / bridge ---------- */
 .intro-text { max-width: 680px; }
+
+/* ---------- Section portrait image (physical AI photos) ---------- */
+.section-portrait {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 32px;
+  display: block;
+  background: var(--surface-2);
+}
+@media (max-width: 720px) {
+  .section-portrait { aspect-ratio: 4 / 3; }
+}
 
 /* ---------- Mobility (이동권 & 돌봄) ---------- */
 .mobility-demo {
