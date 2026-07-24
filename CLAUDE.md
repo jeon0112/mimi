@@ -12,10 +12,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pip install anthropic requests python-dotenv openpyxl
-python run_collection.py        # 전체 파이프라인 실행
+python run_collection.py        # 나라장터 입찰 전체 파이프라인 실행
 python nara_filter.py           # 공고 수집 + AI 필터만 단독 실행
 python bid_analyzer.py          # 입찰가 분석만 단독 실행 (JSON 파일 인수 가능)
 python price_agent.py           # 엑셀 파일 도매가 조회만 단독 실행
+
+python run_gov_ai.py            # 정부 AI/AX 지원사업 크롤러 전체 파이프라인 실행
+python gov_ai_collector.py      # AI/AX 지원사업 수집만 단독 실행
+python gov_ai_filter.py         # 수집 + AI 적격 판단만 단독 실행
 ```
 
 로컬 실행 시 `.env` 파일에 환경변수 설정 필요 (아래 참고).
@@ -31,8 +35,9 @@ python price_agent.py           # 엑셀 파일 도매가 조회만 단독 실�
 | `NOTIFY_EMAIL` | 수신 이메일 주소 | ✅ |
 | `NAVER_CLIENT_ID` | 네이버 쇼핑 API (도매가 조회) | 선택 |
 | `NAVER_CLIENT_SECRET` | 네이버 쇼핑 API | 선택 |
+| `GOV_DATA_API_KEY` | 정부 AI/AX 크롤러 보조 소스(K-Startup). 미설정 시 `NARA_API_KEY` 재사용 | 선택 |
 
-GitHub Secrets에 동일한 이름으로 등록 필요 (`.github/workflows/daily_collection.yml` 참고).
+GitHub Secrets에 동일한 이름으로 등록 필요 (`.github/workflows/daily_collection.yml`, `.github/workflows/gov_ai_collection.yml` 참고).
 
 ## 아키텍처
 
@@ -81,6 +86,31 @@ collect_bids()          ← nara_collector.py  (나라장터 API, 키워드별 �
 - GitHub Actions: `output/` 폴더 → 아티팩트로 30일 보관
 - 로컬: `~/Desktop/나라장터결과/`
 - 이메일: 추천/보류 목록 + 체크리스트 + 입찰가 추천 + 전략 요약, 엑셀 첨부
+
+### 정부 AI/AX 지원사업 크롤러 (`run_gov_ai.py`)
+
+나라장터 입찰과 **독립된 별도 파이프라인**. 전 부처의 AI/AX(AI 전환)·디지털 전환 지원사업·공모를 매일 수집해 이메일로 발송한다.
+
+```
+collect_gov_ai()      ← gov_ai_collector.py  (기업마당 + K-Startup, AI 키워드 필터)
+  → quick_filter()    ← gov_ai_filter.py     (명백한 무관 공고 제거)
+  → ai_evaluate()     ← gov_ai_filter.py     (Claude Sonnet, 20건 배치 → 추천/보류/제외)
+  → ai_detailed_check() ← gov_ai_filter.py   (Claude Opus, 추천 공고만 심층 분석)
+  → to_excel()        ← run_gov_ai.py        (엑셀 생성)
+  → send_email()      ← run_gov_ai.py        (Gmail SMTP, 결과 + 엑셀 첨부)
+```
+
+**데이터 소스**
+- **기업마당(bizinfo.go.kr)**: 전 부처 기업지원사업 통합. 공개 JSON API(인증키 불필요). 주 소스.
+- **K-Startup**: data.go.kr API. `GOV_DATA_API_KEY`(또는 `NARA_API_KEY`) 있을 때만 수집. 보조 소스.
+- 전체 사이트 목록: `GOV_AI_SOURCES.md` (부처별 AI/AX 지원 포털 한 곳 정리)
+
+**주요 수정 포인트**
+- 수집 키워드: `gov_ai_collector.py` `AI_KEYWORDS`
+- AI 판단 기준: `gov_ai_filter.py` `COMPANY_PROFILE`
+- 자동 수집 소스 추가: `gov_ai_collector.py`에 `fetch_*` / `parse_*` 함수 추가 후 `collect_gov_ai()`에 연결
+
+**출력**: `output/gov_ai_*.json|xlsx` (GitHub) / `~/Desktop/정부지원사업결과/` (로컬)
 
 ## GitHub Actions
 
