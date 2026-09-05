@@ -109,8 +109,17 @@ collect_gov_ai()      ← gov_ai_collector.py  (기업마당 + K-Startup, AI 키
   - data.go.kr 서비스키는 **신청한 서비스에만 유효**하다. `NARA_API_KEY` 재사용 시 403 — 재사용하지 않는다.
 - 전체 사이트 목록: `GOV_AI_SOURCES.md` (부처별 AI/AX 지원 포털 한 곳 정리)
 
+**신청 법인은 (주)블루바이오다** (나라장터 입찰은 (주)미미 — 두 파이프라인의 주체가 다르다)
+- 소재지 `전남광주통합특별시 서구`. `gov_ai_filter.HOME_REGION` / `HOME_REGION_ALIASES`.
+  공고문은 통합 이전 명칭(광주광역시/전남/호남)을 쓰는 곳이 많아 별칭을 함께 본다.
+- 수집·판단 범위는 **사업자등록증 종목 안으로 한정한다.** 종목에 없는 사업은 수주할 수 없다.
+  사무용품·소모품 조달, 중증장애인생산품 우선구매는 **나라장터 트랙**이지 여기가 아니다.
+- 장애인기업·예비사회적기업 자격은 프로필에 넣지 않았다. 사업자등록증으로 증명되지 않고
+  어느 법인의 자격인지 확인되지 않았다. 확인 전에는 채우지 않는다.
+
 **주요 수정 포인트**
-- 수집 키워드: `gov_ai_collector.py` `AI_KEYWORDS`
+- 수집 키워드: `gov_ai_collector.py` — 종목별 6개 그룹(`KW_AI`, `KW_WELFARE_GOODS`,
+  `KW_ENV`, `KW_CULTURE`, `KW_MARKET`)을 합쳐 `AI_KEYWORDS`가 된다.
 - AI 판단 기준: `gov_ai_filter.py` `COMPANY_PROFILE`
 - 자동 수집 소스 추가: `gov_ai_collector.py`에 `fetch_*` / `parse_*` 함수 추가 후 `collect_gov_ai()`에 연결
 
