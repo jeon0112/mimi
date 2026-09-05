@@ -54,9 +54,9 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
-    headers = ["번호", "구분", "공고명", "소관부처", "수행기관", "지원분야",
+    headers = ["번호", "구분", "D-DAY", "마감일", "공고명", "소관부처", "수행기관", "지원분야",
                "신청기간", "출처", "AI점수", "추천이유", "적합성", "공고URL"]
-    widths = [5, 8, 42, 18, 18, 14, 20, 12, 8, 36, 8, 50]
+    widths = [5, 8, 8, 12, 42, 18, 18, 14, 20, 12, 8, 36, 8, 50]
 
     for col, (h, w) in enumerate(zip(headers, widths), 1):
         cell = ws.cell(row=1, column=col, value=h)
@@ -74,12 +74,18 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
         rid = r.get("공고ID", "") or r.get("공고명", "")
         fit = detailed.get(rid, {}).get("적합성", "")
 
+        d = r.get("D-DAY")
+        dtxt = f"D-{d}" if isinstance(d, int) else "미상"
         row = [
-            i, status, r.get("공고명", ""), r.get("소관부처", ""), r.get("수행기관", ""),
+            i, status, dtxt, r.get("마감일", ""),
+            r.get("공고명", ""), r.get("소관부처", ""), r.get("수행기관", ""),
             r.get("지원분야", ""), r.get("신청기간", ""), r.get("출처", ""),
             score, e.get("이유", ""), fit, r.get("공고URL", ""),
         ]
-        if status == "추천":
+        # 마감 임박은 색으로 먼저 보이게 한다.
+        if isinstance(d, int) and d <= 7:
+            fill = PatternFill("solid", fgColor="FFCDD2")
+        elif status == "추천":
             fill = PatternFill("solid", fgColor="E8F5E9")
         else:
             fill = PatternFill("solid", fgColor="FFFDE7")
@@ -88,7 +94,7 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
             cell = ws.cell(row=ridx, column=col, value=val)
             cell.border = border
             cell.fill = fill
-            cell.alignment = center if col in [1, 2, 7, 8, 9, 11] else left
+            cell.alignment = center if col in [1, 2, 3, 4, 9, 10, 11, 13] else left
         ws.row_dimensions[ridx].height = 38
 
     ws.cell(row=len(records) + 3, column=1,
@@ -103,6 +109,7 @@ def main():
     log(f"환경: {'GitHub Actions' if IS_GITHUB else '로컬 PC'}")
 
     try:
+        import gov_ai_collector
         from gov_ai_collector import collect_gov_ai, save_to_json
         from gov_ai_filter import quick_filter, ai_evaluate, ai_detailed_check
 
@@ -110,11 +117,24 @@ def main():
         days = 2 if IS_GITHUB else 7
         log("공고 수집 중...")
         records = collect_gov_ai(days=days)
+        errors = list(gov_ai_collector.LAST_ERRORS)
         log(f"수집 완료: {len(records)}건")
 
+        # "0건"은 두 가지 상태를 덮는다. 신규 공고가 없는 것과 소스가 죽은 것은 다르다.
+        # 소스가 죽었으면 워크플로를 빨간불로 끝내서 눈에 띄게 만든다.
+        if errors:
+            log("수집 소스 실패:")
+            for m in errors:
+                log(f"  - {m}")
+
         if not records:
-            log("수집된 공고 없음. 이메일 발송 후 종료.")
-            send_email([], [], None)
+            if errors:
+                log("공고 0건 - 그러나 소스가 실패했다. 공고가 없다고 단정하지 않는다.")
+            else:
+                log("수집된 공고 없음(소스는 정상). 이메일 발송 후 종료.")
+            send_email([], [], None, source_errors=errors)
+            if errors:
+                sys.exit(1)
             return
 
         # 2. 사전 필터
@@ -159,13 +179,20 @@ def main():
             to_excel(recommended + held, xlsx_path, detailed_checks)
             log(f"엑셀 저장: {xlsx_path}")
 
-        send_email(recommended, held, xlsx_path, detailed_checks)
+        send_email(recommended, held, xlsx_path, detailed_checks, source_errors=errors)
 
         log("\n[추천 공고 요약]")
         for r in recommended:
             e = r.get("평가", {})
-            log(f"  ✅ {r['공고명']} | {r.get('소관부처','')} | {e.get('점수',0)}점")
+            d = r.get("D-DAY")
+            dtxt = f"D-{d}" if isinstance(d, int) and d >= 0 else "마감일미상"
+            log(f"  ✅ [{dtxt}] {r['공고명']} | {r.get('소관부처','')} | {e.get('점수',0)}점")
             log(f"     {r.get('공고URL','')}")
+
+        # 소스 하나라도 죽었으면 결과를 보냈더라도 실패로 끝낸다.
+        if errors:
+            log("일부 수집 소스가 실패했습니다. 워크플로를 실패로 종료합니다.")
+            sys.exit(1)
 
     except Exception as e:
         log(f"오류: {e}")
@@ -174,7 +201,8 @@ def main():
         sys.exit(1)
 
 
-def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: dict = None) -> None:
+def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: dict = None,
+               source_errors: list = None) -> None:
     gmail_user = os.getenv("GMAIL_USER", "jjk0112@gmail.com")
     gmail_password = os.getenv("GMAIL_PASSWORD", "")
     to_email = os.getenv("NOTIFY_EMAIL", "jjksp112@naver.com")
@@ -184,8 +212,17 @@ def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: d
         log("이메일 비밀번호 미설정, 발송 건너뜀")
         return
 
+    source_errors = source_errors or []
     date_str = datetime.now().strftime("%Y년 %m월 %d일")
-    subject = f"[정부 AI/AX 지원사업] {date_str} 추천 {len(recommended)}건 / 보류 {len(held)}건"
+
+    def _d(r):
+        v = r.get("D-DAY")
+        return v if isinstance(v, int) else None
+
+    urgent = [r for r in (recommended + held) if _d(r) is not None and _d(r) <= 7]
+    prefix = "[⚠수집실패] " if source_errors else ("[🔥마감임박] " if urgent else "")
+    subject = (f"{prefix}[정부 AI/AX 지원사업] {date_str} "
+               f"추천 {len(recommended)}건 / 보류 {len(held)}건")
 
     lines = [
         "안녕하세요, 오늘의 정부 부처 AI/AX 지원사업·공모 결과입니다.\n",
@@ -193,12 +230,29 @@ def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: d
         "출처: 기업마당(전 부처 통합) + K-Startup\n",
     ]
 
+    # 소스가 죽었으면 맨 위에 말한다. "공고가 없다"로 읽히면 안 된다.
+    if source_errors:
+        lines.append("\n🚨 [수집 소스 실패] 아래 소스에서 공고를 가져오지 못했습니다.")
+        lines.append("   이 메일의 '0건'은 '공고가 없다'는 뜻이 아닙니다.")
+        for m in source_errors:
+            lines.append(f"   - {m}")
+        lines.append("")
+
+    if urgent:
+        lines.append("\n🔥 [마감 임박 - D-7 이내]\n")
+        for r in sorted(urgent, key=lambda x: _d(x)):
+            lines.append(f"• D-{_d(r)} ({r.get('마감일','')}) {r['공고명']}")
+            lines.append(f"  {r.get('공고URL','')}")
+        lines.append("")
+
     if recommended:
         lines.append("\n✅ [추천 지원사업]\n")
         for r in recommended:
             e = r.get("평가", {})
             rid = r.get("공고ID", "") or r.get("공고명", "")
-            lines.append(f"• {r['공고명']}")
+            d = _d(r)
+            dtxt = f"D-{d}" if d is not None else "마감일 미상"
+            lines.append(f"• [{dtxt}] {r['공고명']}")
             lines.append(f"  소관부처: {r.get('소관부처','')} | 수행기관: {r.get('수행기관','')}")
             lines.append(f"  지원분야: {r.get('지원분야','')} | 신청기간: {r.get('신청기간','')}")
             lines.append(f"  AI점수: {e.get('점수',0)}점 - {e.get('이유','')}")
@@ -223,7 +277,10 @@ def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: d
             lines.append(f"  {r.get('공고URL','')}")
 
     if not recommended and not held:
-        lines.append("\n오늘은 해당하는 AI/AX 지원사업 공고가 없습니다.")
+        if source_errors:
+            lines.append("\n결과 없음 - 다만 위 소스 실패 때문이므로 공고가 없다고 단정할 수 없습니다.")
+        else:
+            lines.append("\n오늘은 해당하는 AI/AX 지원사업 공고가 없습니다. (수집 소스는 정상)")
 
     lines.append("\n─────────────────────────")
     lines.append("📚 전체 지원사업 사이트 모음: 저장소의 GOV_AI_SOURCES.md 참고")
