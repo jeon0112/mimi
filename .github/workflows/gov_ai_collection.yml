@@ -41,4 +41,3 @@ jobs:
             output/gov_ai_*.json
             output/gov_ai_*.xlsx
           retention-days: 30
-        if: always()
