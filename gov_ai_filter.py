@@ -11,6 +11,11 @@ load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # 회사 정보 (적격 판단 기준)
+# 신청 법인의 소재지. 지역제한 공고를 걸러내는 데 쓴다.
+# 비워두면 지역 판단을 하지 않는다 - 모르는 값을 지어내느니 판단을 포기한다.
+# 예: "광주광역시" / "전라남도 나주시"
+HOME_REGION = ""
+
 COMPANY_PROFILE = """
 - 회사명: (주)미미
 - 관심 분야: AI 도입 및 AX(AI 전환), 디지털 전환(DX)
@@ -22,6 +27,26 @@ COMPANY_PROFILE = """
 - 규모: 중소기업
 - 목표: 정부 부처·기관의 AI/AX 관련 지원사업·공모에 참여하여 지원금·바우처·컨설팅 확보
 """
+
+
+def _profile() -> str:
+    """소재지가 설정돼 있으면 프로필에 덧붙인다."""
+    if not HOME_REGION:
+        return COMPANY_PROFILE
+    return COMPANY_PROFILE + f"- 소재지: {HOME_REGION}\n"
+
+
+def _region_rule() -> str:
+    """소재지를 모르면 지역 규칙을 아예 넣지 않는다."""
+    if not HOME_REGION:
+        return ""
+    return (
+        f'- 지역제한: 공고가 특정 지역 기업만 대상으로 하는데 그 지역이 "{HOME_REGION}"이 '
+        f'아니면 내용이 아무리 맞아도 "제외". 공고명 앞의 [부산]·[충북] 같은 표기, '
+        f'해시태그의 지역명, 수행기관의 지역 테크노파크·진흥원 이름이 단서다.\n'
+        f'  전국 대상이거나 지역 언급이 없으면 지역 때문에 감점하지 말 것.\n'
+    )
+
 
 # 사전 제외 키워드 (명백히 무관한 공고)
 EXCLUDE_KEYWORDS = ["채용공고", "입찰공고", "낙찰", "수의계약 체결", "결과발표", "선정결과", "종료"]
@@ -52,7 +77,9 @@ def ai_evaluate(records: list) -> list:
 
         text = "\n".join([
             f"{j+1}. [{r.get('공고ID','')}] {r['공고명']} | 소관: {r.get('소관부처','')} | "
-            f"분야: {r.get('지원분야','')} | 신청기간: {r.get('신청기간','')}"
+            f"수행: {r.get('수행기관','')} | 분야: {r.get('지원분야','')} | "
+            f"신청기간: {r.get('신청기간','')} | 대상: {r.get('대상','')} | "
+            f"태그: {r.get('해시태그','')[:120]}"
             for j, r in enumerate(batch)
         ])
 
@@ -60,7 +87,7 @@ def ai_evaluate(records: list) -> list:
 이 회사가 참여할 만한 'AI/AX(인공지능 전환) 관련 정부 지원사업/공모'인지 판단하세요.
 
 ## 회사 프로필
-{COMPANY_PROFILE}
+{_profile()}
 
 ## 평가할 공고 목록
 {text}
@@ -72,6 +99,7 @@ def ai_evaluate(records: list) -> list:
     "공고ID": "...",
     "추천여부": "추천" 또는 "보류" 또는 "제외",
     "점수": 0~100,
+    "지역제한": "전국" 또는 해당 지역명(예: "부산광역시"),
     "이유": "한 줄 이유"
   }}
 ]
@@ -81,6 +109,7 @@ def ai_evaluate(records: list) -> list:
 - "보류": AI와 부분 관련되거나 대상·조건이 애매하지만 가능성 있는 공고
 - "제외": AI/디지털과 무관(단순 시설·공사·농수산·관광 등), 이미 마감·종료된 공고
 - 장애인기업·사회적기업 우대·가점 있는 공고는 가점 부여
+{_region_rule()}- "지역제한" 필드는 소재지 설정과 무관하게 항상 채운다. 지역 언급이 없으면 "전국".
 - 확실하지 않으면 "보류" (제외보다 보류 우선)
 """
         try:
