@@ -35,7 +35,8 @@ python gov_ai_filter.py         # 수집 + AI 적격 판단만 단독 실행
 | `NOTIFY_EMAIL` | 수신 이메일 주소 | ✅ |
 | `NAVER_CLIENT_ID` | 네이버 쇼핑 API (도매가 조회) | 선택 |
 | `NAVER_CLIENT_SECRET` | 네이버 쇼핑 API | 선택 |
-| `GOV_DATA_API_KEY` | 정부 AI/AX 크롤러 보조 소스(K-Startup). 미설정 시 `NARA_API_KEY` 재사용 | 선택 |
+| `BIZINFO_API_KEY` | 기업마당 오픈API 인증키 (정부 AI/AX 크롤러 **주 소스**). 미설정 시 공개 데모키 | 사실상 필수 |
+| `GOV_DATA_API_KEY` | 정부 AI/AX 크롤러 보조 소스(K-Startup). `NARA_API_KEY` 재사용 불가(403) | 선택 |
 
 GitHub Secrets에 동일한 이름으로 등록 필요 (`.github/workflows/daily_collection.yml`, `.github/workflows/gov_ai_collection.yml` 참고).
 
@@ -101,14 +102,30 @@ collect_gov_ai()      ← gov_ai_collector.py  (기업마당 + K-Startup, AI 키
 ```
 
 **데이터 소스**
-- **기업마당(bizinfo.go.kr)**: 전 부처 기업지원사업 통합. 공개 JSON API(인증키 불필요). 주 소스.
-- **K-Startup**: data.go.kr API. `GOV_DATA_API_KEY`(또는 `NARA_API_KEY`) 있을 때만 수집. 보조 소스.
+- **기업마당(bizinfo.go.kr)**: 전 부처 기업지원사업 통합. 주 소스.
+  - 엔드포인트 `https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do`, 파라미터 `crtfcKey`(인증키) + `dataType=json`
+  - **인증키 필요**. `BIZINFO_API_KEY` 미설정 시 공개 데모키로 동작하지만 예고 없이 막힐 수 있다.
+- **K-Startup**: data.go.kr API. `GOV_DATA_API_KEY` 있을 때만 수집. 보조 소스.
+  - data.go.kr 서비스키는 **신청한 서비스에만 유효**하다. `NARA_API_KEY` 재사용 시 403 — 재사용하지 않는다.
 - 전체 사이트 목록: `GOV_AI_SOURCES.md` (부처별 AI/AX 지원 포털 한 곳 정리)
 
 **주요 수정 포인트**
 - 수집 키워드: `gov_ai_collector.py` `AI_KEYWORDS`
 - AI 판단 기준: `gov_ai_filter.py` `COMPANY_PROFILE`
 - 자동 수집 소스 추가: `gov_ai_collector.py`에 `fetch_*` / `parse_*` 함수 추가 후 `collect_gov_ai()`에 연결
+
+**마감일 처리 (중요)**
+- `parse_period()` / `dday()`가 `신청기간` 문자열에서 마감일과 D-day를 뽑는다. 못 읽으면 빈 값 — 지어내지 않는다.
+- 이미 마감된 공고는 제외. **마감일을 모르는 공고(`D-DAY is None`)는 남긴다** — 모르는 것은 버릴 근거가 아니다.
+- 최근성 필터는 `등록일 최근 N일` **또는** `D-DAY ≤ URGENT_DAYS(7)`. 등록일만 보면
+  "열흘 전에 뜬 내일 마감 공고"를 버리게 된다. 그건 절대 놓치면 안 되는 공고다.
+- 결과는 D-day 오름차순 정렬, 마감일 미상은 뒤로.
+
+**실패를 침묵시키지 않는다 (중요)**
+- 수집 실패 사유는 `gov_ai_collector.LAST_ERRORS`에 남는다.
+- `run_gov_ai.py`는 이를 읽어 메일 맨 위에 🚨로 표시하고 **`sys.exit(1)`로 워크플로를 빨간불로 끝낸다**.
+- 이유: "0건"은 *신규 공고가 없다*와 *소스가 죽었다*를 덮는다. 실제로 2026-08~09 내내
+  잘못된 엔드포인트(404)로 43회 전부 0건을 보내면서 워크플로는 success였다.
 
 **출력**: `output/gov_ai_*.json|xlsx` (GitHub) / `~/Desktop/정부지원사업결과/` (로컬)
 

@@ -24,6 +24,7 @@ jobs:
       - name: AI/AX 지원사업 수집 및 이메일 발송
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BIZINFO_API_KEY: ${{ secrets.BIZINFO_API_KEY }}
           GOV_DATA_API_KEY: ${{ secrets.GOV_DATA_API_KEY }}
           NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
@@ -32,6 +33,7 @@ jobs:
         run: python run_gov_ai.py
 
       - name: 결과 파일 업로드 (아티팩트)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: 정부AI지원사업-${{ github.run_id }}
