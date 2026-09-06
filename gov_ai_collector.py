@@ -15,6 +15,7 @@
 import os
 import re
 import json
+import time
 import requests
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -89,6 +90,74 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; MimiGovAICrawler/1.0)",
     "Accept": "application/json, text/plain, */*",
 }
+
+# ─────────────────────────────────────────────
+# 네트워크 계층
+# 일시적으로 끊긴 것과 진짜 죽은 것은 다르다. 앞의 것은 다시 걸고,
+# 뒤의 것은 그대로 올려보내 빨간불로 끝나게 한다.
+# ─────────────────────────────────────────────
+
+# (연결, 응답) 타임아웃. 연결을 짧게 끊어야 재시도가 빨리 돈다.
+REQUEST_TIMEOUT = (10, 30)
+
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF = 3  # 초. 시도 사이 3초 → 6초 쉰다. 최악 66초.
+
+# 다시 걸어볼 가치가 있는 상태코드. 4xx는 여기 없다 -
+# 키가 틀렸거나 주소가 틀린 것을 백 번 걸어도 답은 같고,
+# 그동안 진짜 원인이 재시도 로그에 묻힌다.
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+# 예외 메시지에는 실패한 요청 URL이 통째로 들어간다 - 그 안에 인증키가 있다.
+# 이 문장은 매일 이메일로 나가고, 저장소가 Public이라 Actions 로그도 공개된다.
+# 키는 여기서 반드시 지운다.
+_SECRET_RE = re.compile(
+    r"(?i)\b(crtfcKey|serviceKey|apiKey|authKey|accessKey|api_key)=[^&\s'\")]+")
+
+
+def _mask_secrets(text: str) -> str:
+    """URL 쿼리에 실린 인증키를 가린다. 없는 값을 지어내지 않듯, 있는 키도 흘리지 않는다."""
+    return _SECRET_RE.sub(r"\1=***", text)
+
+
+def _brief(err) -> str:
+    """예외를 메일에 실을 만한 한 줄로 줄인다. 원인은 남기되 스택 잡음과 키는 버린다."""
+    text = _mask_secrets(" ".join(str(err).split()))
+    if len(text) > 180:
+        text = text[:180] + "…"
+    return f"{type(err).__name__}: {text}" if text else type(err).__name__
+
+
+def request_json(url: str, params: dict, label: str):
+    """JSON 응답을 가져온다. 일시적 실패는 재시도하고, 끝내 실패하면 예외를 올린다.
+
+    재시도는 실패를 숨기는 장치가 아니다. 세 번 다 실패했다는 사실이
+    사유에 그대로 남으므로, 오히려 "진짜 죽었다"는 더 강한 근거가 된다.
+    """
+    last_err = None
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            resp = requests.get(url, params=params, headers=HEADERS,
+                                timeout=REQUEST_TIMEOUT)
+            if resp.status_code in RETRYABLE_STATUS:
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code}", response=resp)
+            resp.raise_for_status()  # 4xx는 여기서 바로 터진다 - 재시도하지 않는다
+            return resp.json()
+        except requests.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            if status not in RETRYABLE_STATUS:
+                raise  # 인증 실패·주소 오류: 다시 걸 이유가 없다
+            last_err = e
+        except (requests.ConnectionError, requests.Timeout, ValueError) as e:
+            last_err = e  # 연결 끊김 / 시간 초과 / 응답이 JSON이 아님
+        if attempt < RETRY_ATTEMPTS:
+            wait = RETRY_BACKOFF * attempt
+            print(f"  [{label}] {attempt}차 시도 실패 "
+                  f"({type(last_err).__name__}) - {wait}초 후 재시도")
+            time.sleep(wait)
+    raise RuntimeError(f"{RETRY_ATTEMPTS}번 모두 실패 - {_brief(last_err)}")
 
 
 def _today() -> str:
@@ -173,11 +242,9 @@ def fetch_bizinfo(max_results: int = 200) -> list:
         "searchCnt": max_results,
     }
     try:
-        resp = requests.get(BIZINFO_URL, params=params, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
+        data = request_json(BIZINFO_URL, params, "기업마당")
     except Exception as e:
-        msg = f"기업마당(주 소스) 조회 실패: {e}"
+        msg = f"기업마당(주 소스) 조회 실패: {_brief(e)}"
         print(f"  {msg}")
         LAST_ERRORS.append(msg)
         return []
@@ -233,11 +300,9 @@ def fetch_kstartup(max_results: int = 100) -> list:
         "returnType": "json",
     }
     try:
-        resp = requests.get(KSTARTUP_URL, params=params, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
+        data = request_json(KSTARTUP_URL, params, "K-Startup")
     except Exception as e:
-        msg = f"K-Startup(보조 소스) 조회 실패: {e}"
+        msg = f"K-Startup(보조 소스) 조회 실패: {_brief(e)}"
         print(f"  {msg}")
         LAST_ERRORS.append(msg)
         return []
