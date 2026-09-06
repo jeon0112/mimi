@@ -1,3 +1,9 @@
 __pycache__/
 *.pyc
 .env
+
+# 음성 클론 자산은 저장소에 올리지 않는다 (Public 저장소)
+*.voice
+voice_model/
+voice_ref/
+reference_audio/
