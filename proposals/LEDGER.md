@@ -132,12 +132,34 @@ E-17 이 "압축이 안 걸린 사실이 로그에 안 남는다"였다면, 이�
 | 재시작 후 새 프로세스에 로드 | 확인 (17:32 재기동) |
 | 유효 임계값 153,600 | 실측 (컴프레서 직접 생성 재현) |
 | 기동 로그 출력 | 안 찍힘 (quiet_mode, 설계상) |
-| 실전 `Preflight compression` 발동 | **미확인** — 현재 컨텍스트 100,904 로 문턱 미달 |
+| config → 컴프레서 배선 | 확인 (`agent_init.py` 2269 → 2790) |
+| 실전 `Preflight compression` 발동 | **미확인** — 컨텍스트가 아직 문턱 미달 |
 
 **"발동 안 함"과 "설정 안 먹음"은 이 시점에 구분되지 않는다.** 그래서 적용됨이라고 쓰지 않는다.
-남은 확인 두 가지 — ① 게이트웨이가 세션 컴프레서를 만들 때 이 설정값을 실제로 넘기는가
-(재현은 손으로 캡을 넣어 만든 것이라 배선 자체는 아직 안 봤다) ② 컨텍스트가
-153,600 을 넘긴 다음 턴에 로그가 찍히는가.
+
+**배선 확인 (2026-09-06)** — 재현은 손으로 캡을 넣어 만든 것이라 "클램프가 동작한다"는
+증명이었지 "게이트웨이가 그 값을 넘긴다"는 증명이 아니었다. 코드로 확인했다.
+
+```
+config.yaml  compression.threshold_tokens: 153600
+  → agent_init.py 1799  load_config_readonly()
+  → agent_init.py 2269  compression_threshold_tokens = int(...)
+  → agent_init.py 2790  ContextCompressor(threshold_tokens_cap=...)
+  → context_compressor.py 3177  min(cap, context_length) < threshold → 클램프
+```
+
+**E-21 (지뢰) — 이 수정은 없는 설정에 기대어 서 있다.**
+
+2774행 `ContextCompressor(...)` 는 `if _selected_engine is not None: ... else:` 의
+**else 브랜치**다. 플러그인 엔진이 선택되면 2763행 `update_model` 경로로 가고
+**그쪽은 `threshold_tokens_cap` 을 넘기지 않는다.**
+
+지금 이 갈림길이 안전한 이유는 단 하나 — `config.yaml` 에 `context:` 섹션이 **없어서**
+기본값 `"compressor"` 가 쓰이기 때문이다. 즉 **누군가 나중에 `context.engine` 을
+플러그인으로 설정하면, 임계값은 아무 오류 없이 524,288 로 돌아간다.**
+설정을 지우지도 않았는데 고친 것이 사라진다. 로그도 안 남는다.
+
+→ `context.engine` 을 건드릴 때는 반드시 유효 임계값을 다시 잰다. 이 문장이 그 알람이다.
 
 ---
 
