@@ -15,6 +15,7 @@
 import os
 import re
 import json
+import time
 import requests
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -43,19 +44,120 @@ LAST_ERRORS = []
 # K-Startup 사업공고 (data.go.kr)
 KSTARTUP_URL = "https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01"
 
-# AI/AX 관련 수집 키워드
-AI_KEYWORDS = [
+# ─────────────────────────────────────────────
+# 수집 키워드 — (주)블루바이오 사업자등록증 종목 기준
+# 여기서 걸리지 않으면 AI 판단 단계로 넘어가지도 못한다. 넓게 잡고 뒤에서 거른다.
+# ─────────────────────────────────────────────
+
+# 정보통신업 — 소프트웨어·시스템통합·데이터
+KW_AI = [
     "인공지능", "AI", "에이아이", "AX", "인공지능전환", "AI전환", "AI융합",
     "생성형", "생성형AI", "초거대", "초거대AI", "LLM", "거대언어모델",
     "머신러닝", "딥러닝", "데이터바우처", "AI바우처", "데이터", "빅데이터",
     "디지털전환", "DX", "지능형", "스마트공장", "클라우드", "SaaS",
     "디지털융합", "챗봇", "음성인식", "영상인식", "자율", "로봇",
+    "소프트웨어", "시스템통합", "정보화", "플랫폼", "디지털",
 ]
+
+# 도소매업 — 노인복지용구, 장애인보장구 (등록 종목)
+# 자격 기반 키워드(장애인기업·장애인고용·중증장애인생산품 등)는 넣지 않는다.
+# 그쪽은 사무용품 우선구매에 가깝고, 나라장터 물품입찰 트랙에서 다룬다.
+KW_WELFARE_GOODS = [
+    "노인복지용구", "장애인보장구", "복지용구", "고령친화", "보조공학",
+]
+
+# 서비스업 — 에어컨청소, 새집증후군제거 (등록 종목)
+KW_ENV = [
+    "실내공기질", "공기질", "새집증후군", "실내환경",
+]
+
+# 서비스업 — 행사대행·전시·문화공연·컨벤션·축제 기획업 (등록 종목)
+# 정보통신업 — 문화예술콘텐츠개발 / 도소매업 — 미술품·공예품·굿즈
+KW_CULTURE = [
+    "행사대행", "행사기획", "축제", "컨벤션", "전시", "문화공연",
+    "문화예술", "콘텐츠", "공예", "굿즈", "지역축제",
+]
+
+# 판로 — 위 종목의 매출로 이어지는 지원
+KW_MARKET = ["판로", "판로개척"]
+
+AI_KEYWORDS = KW_AI + KW_WELFARE_GOODS + KW_ENV + KW_CULTURE + KW_MARKET
+
+# 짧아서 오탐이 나는 약어 — 단어 경계로만 인정한다
+SHORT_KEYWORDS = {"AI", "AX", "DX", "LLM"}
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; MimiGovAICrawler/1.0)",
     "Accept": "application/json, text/plain, */*",
 }
+
+# ─────────────────────────────────────────────
+# 네트워크 계층
+# 일시적으로 끊긴 것과 진짜 죽은 것은 다르다. 앞의 것은 다시 걸고,
+# 뒤의 것은 그대로 올려보내 빨간불로 끝나게 한다.
+# ─────────────────────────────────────────────
+
+# (연결, 응답) 타임아웃. 연결을 짧게 끊어야 재시도가 빨리 돈다.
+REQUEST_TIMEOUT = (10, 30)
+
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF = 3  # 초. 시도 사이 3초 → 6초 쉰다. 최악 66초.
+
+# 다시 걸어볼 가치가 있는 상태코드. 4xx는 여기 없다 -
+# 키가 틀렸거나 주소가 틀린 것을 백 번 걸어도 답은 같고,
+# 그동안 진짜 원인이 재시도 로그에 묻힌다.
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+# 예외 메시지에는 실패한 요청 URL이 통째로 들어간다 - 그 안에 인증키가 있다.
+# 이 문장은 매일 이메일로 나가고, 저장소가 Public이라 Actions 로그도 공개된다.
+# 키는 여기서 반드시 지운다.
+_SECRET_RE = re.compile(
+    r"(?i)\b(crtfcKey|serviceKey|apiKey|authKey|accessKey|api_key)=[^&\s'\")]+")
+
+
+def _mask_secrets(text: str) -> str:
+    """URL 쿼리에 실린 인증키를 가린다. 없는 값을 지어내지 않듯, 있는 키도 흘리지 않는다."""
+    return _SECRET_RE.sub(r"\1=***", text)
+
+
+def _brief(err) -> str:
+    """예외를 메일에 실을 만한 한 줄로 줄인다. 원인은 남기되 스택 잡음과 키는 버린다."""
+    text = _mask_secrets(" ".join(str(err).split()))
+    if len(text) > 180:
+        text = text[:180] + "…"
+    return f"{type(err).__name__}: {text}" if text else type(err).__name__
+
+
+def request_json(url: str, params: dict, label: str):
+    """JSON 응답을 가져온다. 일시적 실패는 재시도하고, 끝내 실패하면 예외를 올린다.
+
+    재시도는 실패를 숨기는 장치가 아니다. 세 번 다 실패했다는 사실이
+    사유에 그대로 남으므로, 오히려 "진짜 죽었다"는 더 강한 근거가 된다.
+    """
+    last_err = None
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            resp = requests.get(url, params=params, headers=HEADERS,
+                                timeout=REQUEST_TIMEOUT)
+            if resp.status_code in RETRYABLE_STATUS:
+                raise requests.HTTPError(
+                    f"HTTP {resp.status_code}", response=resp)
+            resp.raise_for_status()  # 4xx는 여기서 바로 터진다 - 재시도하지 않는다
+            return resp.json()
+        except requests.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            if status not in RETRYABLE_STATUS:
+                raise  # 인증 실패·주소 오류: 다시 걸 이유가 없다
+            last_err = e
+        except (requests.ConnectionError, requests.Timeout, ValueError) as e:
+            last_err = e  # 연결 끊김 / 시간 초과 / 응답이 JSON이 아님
+        if attempt < RETRY_ATTEMPTS:
+            wait = RETRY_BACKOFF * attempt
+            print(f"  [{label}] {attempt}차 시도 실패 "
+                  f"({type(last_err).__name__}) - {wait}초 후 재시도")
+            time.sleep(wait)
+    raise RuntimeError(f"{RETRY_ATTEMPTS}번 모두 실패 - {_brief(last_err)}")
 
 
 def _today() -> str:
@@ -140,11 +242,9 @@ def fetch_bizinfo(max_results: int = 200) -> list:
         "searchCnt": max_results,
     }
     try:
-        resp = requests.get(BIZINFO_URL, params=params, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
+        data = request_json(BIZINFO_URL, params, "기업마당")
     except Exception as e:
-        msg = f"기업마당(주 소스) 조회 실패: {e}"
+        msg = f"기업마당(주 소스) 조회 실패: {_brief(e)}"
         print(f"  {msg}")
         LAST_ERRORS.append(msg)
         return []
@@ -200,11 +300,9 @@ def fetch_kstartup(max_results: int = 100) -> list:
         "returnType": "json",
     }
     try:
-        resp = requests.get(KSTARTUP_URL, params=params, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
+        data = request_json(KSTARTUP_URL, params, "K-Startup")
     except Exception as e:
-        msg = f"K-Startup(보조 소스) 조회 실패: {e}"
+        msg = f"K-Startup(보조 소스) 조회 실패: {_brief(e)}"
         print(f"  {msg}")
         LAST_ERRORS.append(msg)
         return []
@@ -259,7 +357,7 @@ def _matches_ai(record: dict) -> bool:
     for kw in AI_KEYWORDS:
         k = kw.upper()
         # 'AI'는 오탐(예: MAINtenance) 방지를 위해 공백/기호 경계로 판단
-        if k in ("AI", "AX", "DX", "LLM"):
+        if k in SHORT_KEYWORDS:
             padded = f" {haystack} ".replace("(", " ").replace(")", " ").replace("/", " ").replace("-", " ")
             if f" {k} " in padded or f" {k}," in padded:
                 return True

@@ -54,9 +54,9 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
-    headers = ["번호", "구분", "D-DAY", "마감일", "공고명", "소관부처", "수행기관", "지원분야",
-               "신청기간", "출처", "AI점수", "추천이유", "적합성", "공고URL"]
-    widths = [5, 8, 8, 12, 42, 18, 18, 14, 20, 12, 8, 36, 8, 50]
+    headers = ["번호", "구분", "D-DAY", "마감일", "지역제한", "공고명", "소관부처", "수행기관",
+               "지원분야", "신청기간", "출처", "AI점수", "추천이유", "적합성", "공고URL"]
+    widths = [5, 8, 8, 12, 12, 42, 18, 18, 14, 20, 12, 8, 36, 8, 50]
 
     for col, (h, w) in enumerate(zip(headers, widths), 1):
         cell = ws.cell(row=1, column=col, value=h)
@@ -77,7 +77,7 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
         d = r.get("D-DAY")
         dtxt = f"D-{d}" if isinstance(d, int) else "미상"
         row = [
-            i, status, dtxt, r.get("마감일", ""),
+            i, status, dtxt, r.get("마감일", ""), e.get("지역제한", ""),
             r.get("공고명", ""), r.get("소관부처", ""), r.get("수행기관", ""),
             r.get("지원분야", ""), r.get("신청기간", ""), r.get("출처", ""),
             score, e.get("이유", ""), fit, r.get("공고URL", ""),
@@ -94,7 +94,7 @@ def to_excel(records: list, path: str, detailed: dict = None) -> str:
             cell = ws.cell(row=ridx, column=col, value=val)
             cell.border = border
             cell.fill = fill
-            cell.alignment = center if col in [1, 2, 3, 4, 9, 10, 11, 13] else left
+            cell.alignment = center if col in [1, 2, 3, 4, 5, 10, 11, 12, 14] else left
         ws.row_dimensions[ridx].height = 38
 
     ws.cell(row=len(records) + 3, column=1,
@@ -186,7 +186,9 @@ def main():
             e = r.get("평가", {})
             d = r.get("D-DAY")
             dtxt = f"D-{d}" if isinstance(d, int) and d >= 0 else "마감일미상"
-            log(f"  ✅ [{dtxt}] {r['공고명']} | {r.get('소관부처','')} | {e.get('점수',0)}점")
+            region = e.get("지역제한", "")
+            rtxt = f" | 지역:{region}" if region and region != "전국" else ""
+            log(f"  ✅ [{dtxt}] {r['공고명']} | {r.get('소관부처','')}{rtxt} | {e.get('점수',0)}점")
             log(f"     {r.get('공고URL','')}")
 
         # 소스 하나라도 죽었으면 결과를 보냈더라도 실패로 끝낸다.
@@ -253,7 +255,9 @@ def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: d
             d = _d(r)
             dtxt = f"D-{d}" if d is not None else "마감일 미상"
             lines.append(f"• [{dtxt}] {r['공고명']}")
-            lines.append(f"  소관부처: {r.get('소관부처','')} | 수행기관: {r.get('수행기관','')}")
+            region = e.get("지역제한", "")
+            rtxt = f" | 지역: {region}" if region and region != "전국" else ""
+            lines.append(f"  소관부처: {r.get('소관부처','')} | 수행기관: {r.get('수행기관','')}{rtxt}")
             lines.append(f"  지원분야: {r.get('지원분야','')} | 신청기간: {r.get('신청기간','')}")
             lines.append(f"  AI점수: {e.get('점수',0)}점 - {e.get('이유','')}")
             chk = detailed_checks.get(rid, {})
@@ -273,7 +277,9 @@ def send_email(recommended: list, held: list, xlsx_path: str, detailed_checks: d
         lines.append("\n⏸ [보류 지원사업]\n")
         for r in held:
             e = r.get("평가", {})
-            lines.append(f"• {r['공고명']} ({r.get('소관부처','')}) - {e.get('이유','')}")
+            region = e.get("지역제한", "")
+            rtxt = f" [지역: {region}]" if region and region != "전국" else ""
+            lines.append(f"• {r['공고명']} ({r.get('소관부처','')}){rtxt} - {e.get('이유','')}")
             lines.append(f"  {r.get('공고URL','')}")
 
     if not recommended and not held:
