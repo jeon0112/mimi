@@ -154,6 +154,20 @@ collect_gov_ai()      ← gov_ai_collector.py  (기업마당 + K-Startup, AI 키
 
 **출력**: `output/gov_ai_*.json|xlsx` (GitHub) / `~/Desktop/정부지원사업결과/` (로컬)
 
+## 사업계획서 (`proposals/`)
+
+정부지원사업 사업계획서를 반복 가능한 공정으로 만든 체계. **작업 전 `proposals/README.md`를 먼저 읽는다.**
+
+- `proposals/README.md` — 절대 규칙 6개와 작업 순서. 이 체계의 헌법.
+- `proposals/LEDGER.md` — **근거 원장(단일 진실 원천).** 계획서의 모든 주장 문장은
+  여기 한 행(`E-번호`)을 가리킨다. 가리킬 행이 없으면 그 문장은 쓰지 않고 지운다.
+- `proposals/QUALITY_GATE.md` — 제출 전 13항목. 하나라도 걸리면 제출하지 않는다.
+- `proposals/TEMPLATE_공고해부.md` — 새 공고가 오면 복사해서 시작.
+- `proposals/<마감일>_<공고약칭>/` — 공고별 작업 폴더. 폴더명 앞의 마감일로 정렬하면 급한 순서다.
+
+핵심 원칙은 크롤러와 같다. **없는 값은 지어내지 않는다.** 공고가 「미정」「미측정」을
+허용한다고 쓴 칸은 그대로 비운다 — 빈칸은 감점이 아니지만 허위기재는 선정 취소다.
+
 ## GitHub Actions
 
 - 스케줄: `cron: '0 23 * * *'` = 매일 KST 08:00
