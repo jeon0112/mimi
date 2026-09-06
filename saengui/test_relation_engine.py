@@ -75,6 +75,13 @@ results.append(check("문서 사례: 양이 밀고 음이 받는다",
                      rel.steps[2].result))
 results.append(check("문서 사례: 십성이 비대칭", "비대칭" in rel.tags, rel.asymmetry))
 
+# 정정된 값을 이름으로 박아둔다. 원문은 편관/편재였고 표준은 정관/정재다.
+# (시저님 결정 2026-09-06: 문서를 고치고 표준으로 간다. 십성표.md 참조)
+results.append(check("정정 확정: 己→甲 은 편관이 아니라 정관",
+                     R.ten_god("기", "갑") == "정관", "음양 다름 → 정(正)"))
+results.append(check("정정 확정: 甲→己 는 편재가 아니라 정재",
+                     R.ten_god("갑", "기") == "정재", "음양 다름 → 정(正)"))
+
 # ── 대운 ─────────────────────────────────────
 results.append(check("대운 없으면 판정하지 않는다",
                      rel.timing is None and "대운 교차" in rel.missing
