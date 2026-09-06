@@ -1,12 +1,14 @@
-# 생의 무늬 — 가중치 모듈
+# 생의 무늬 — 가중치·관계 모듈
 
 엔진 본체는 VPS `/opt/data/saengui-munui/backend/` 에 있다.
-여기에는 **가중치 표 하나만** 둔다. 그것이 가장 많이 바뀌고, 가장 조용히 틀어지는 값이기 때문이다.
+여기에는 **판단이 박혀 있는 모듈만** 둔다 — 가장 많이 바뀌고, 가장 조용히 틀어지는 것들이다.
 
 ```
 saengui/
-├── weights.py        ← VPS engines/weights.py 로 배치
-├── test_weights.py   ← 배치 후 VPS에서 실행해 통과 확인
+├── weights.py                 ← VPS engines/weights.py 로 배치
+├── test_weights.py            ← 배치 후 VPS에서 실행 (17/17)
+├── relation_engine.py         ← VPS engines/relation_engine.py 로 배치
+├── test_relation_engine.py    ← 배치 후 VPS에서 실행 (29/29)
 └── README.md
 ```
 
@@ -99,13 +101,15 @@ block = prompt_block(available)             # 프롬프트에 이 문자열을 �
 
 ---
 
-## 아직 없는 것
+## 관계 축을 언제 켜는가
 
-`관계` 축은 가중치 25%를 배정받았지만 **이를 채울 엔진이 없다.**
-`relation_engine.py` 는 설계 문서에만 있고 코드가 없다.
+`관계` 축(25%)을 채울 `relation_engine.py` 는 아래에 만들었다.
+다만 5단계 중 **대운 교차**는 `saju_engine` 의 대운 산출을 `{연도: 오행}` 으로
+바꾸는 어댑터가 있어야 돈다. 그 전까지는 `daeun=None` 으로 두고 그 단계를 비운다.
 
-그때까지 `resolve()` 가 관계 축을 빼고 재정규화하며, 빠졌다는 사실을 함께 돌려준다.
-**그 상태로 동작하는 것이 맞다.** 없는 축을 있는 척 채우지 않는다.
+관계 데이터가 아직 없는 사용자에게는 `resolve()` 가 관계 축을 빼고 재정규화하며,
+빠졌다는 사실을 함께 돌려준다. **그 상태로 동작하는 것이 맞다.**
+없는 축을 있는 척 채우지 않는다.
 
 ---
 
