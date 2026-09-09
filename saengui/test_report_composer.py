@@ -192,6 +192,46 @@ results.append(check("빈 입력에서 터지지 않는다",
                      RC.forer_overlap("", "감정선이 깁니다.") == 0.0))
 
 print("=" * 70)
+# ── 2026-09-09 추가 — 금칙어가 손금 없이도 도는가 · 오탐을 막는가 ──
+print()
+print("── 금칙어 (사주만 있는 리포트) ──")
+
+# ① palm 없이도 금칙어를 잡는가
+#    이전에는 이 검사가 `palm is not None` 안에 있어서
+#    사주만 있는 리포트는 검사를 한 번도 받지 않았다.
+_saju_bad = "일간 병(丙)입니다. 대운에 암이 발견될 수 있습니다."
+_v = RC.verify_report(_saju_bad)
+results.append(check("손금 없이도 금칙어를 잡는다",
+                     any(x.kind == "금칙어" for x in _v),
+                     f"{[x.detail for x in _v if x.kind=='금칙어']}"))
+
+# ② 한 글자 금칙어의 오탐을 막는가 — 거짓 경보는 진짜 경보를 죽인다
+_ok_cases = ["암말의 곧음이 이롭다", "죽이 잘 맞는다", "팥죽", "암시하는 바"]
+_fp = [t for t in _ok_cases if RC.banned_hits(t)]
+results.append(check("명리·주역 낱말을 금칙어로 오탐하지 않는다",
+                     not _fp, f"오탐: {_fp}" if _fp else "곤괘 '암말'·'죽이 맞다' 통과"))
+
+# ③ 진짜는 여전히 잡는가
+_real = ["암이 발견", "죽음이 가깝다", "수명이 짧", "반드시 그렇다"]
+_miss = [t for t in _real if not RC.banned_hits(t)]
+results.append(check("진짜 금칙어는 여전히 잡는다",
+                     not _miss, f"놓침: {_miss}" if _miss else "4/4 잡음"))
+
+# ④ 사주 어휘가 근거로 세어지는가
+#    이 목록은 손금 어휘만 촘촘했다. 사주 문장이 「근거 없음」으로 세어졌다.
+_grounded = ["일간 병(丙), 양화입니다", "신약한 명식입니다", "대운은 을사입니다",
+             "오행 분포가 화에 몰려 있습니다"]
+_ng = [t for t in _grounded if not RC.is_grounded(t)]
+results.append(check("사주 근거를 단 문장을 근거로 센다",
+                     not _ng, f"못 셈: {_ng}" if _ng else "4/4 셈"))
+
+# ⑤ 근거 없는 시적 문장은 여전히 근거가 아니다
+_poetic = ["밝게 드러난다", "주변을 따뜻하게 한다", "숨기지 않는다"]
+_wrong = [t for t in _poetic if RC.is_grounded(t)]
+results.append(check("근거 없는 시적 문장은 근거로 세지 않는다",
+                     not _wrong, f"잘못 셈: {_wrong}" if _wrong else "3/3 걸러냄"))
+
+print()
 print(f"{sum(results)}/{len(results)} 통과")
 print("=" * 70)
 print()

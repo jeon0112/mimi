@@ -151,6 +151,16 @@ _EVIDENCE_TERMS = tuple(PF.ALL_LINES) + (
     "정관", "편관", "정재", "편재", "정인", "편인",
     "식신", "상관", "비견", "겁재", "대운", "결실기",
     "기록", "적으신", "말씀하신", "선택하신", "하신 일",
+    # 사주 — 2026-09-09 추가.
+    # 이 목록은 손금 어휘만 촘촘했고 사주 쪽이 거의 비어 있었다.
+    # 그래서 근거를 단 문장도 「근거 없음」으로 세어졌다.
+    # ★ 한 글자(갑·을·병·목·화·수…)는 넣지 않는다 — 오탐이 폭발한다.
+    #   근거는 "일간 병(丙)" 처럼 두 글자 이상 낱말과 함께 적는다.
+    "일간", "일주", "월주", "년주", "시주", "연주",
+    "명식", "사주", "팔자", "천간", "지지", "간지",
+    "오행", "신강", "신약", "용신", "희신", "기신", "격국",
+    "세운", "유년", "진태양시", "절입",
+    "주역", "괘", "상괘", "하괘",
 )
 
 # 리포트 전체에서 근거를 가리키는 문장이 이 비율 미만이면 위반.
@@ -186,6 +196,30 @@ def barnum_flags(sentence: str) -> list[str]:
 
 
 # ─────────────────────────────────────────────
+# 금칙어 — 한 글자짜리는 문맥을 본다
+# ─────────────────────────────────────────────
+# 2026-09-09: BANNED_TERMS 의 "암"·"죽" 이 한 글자라
+#   "암말의 곧음"(곤괘 판사 利牝馬之貞) · "죽이 잘 맞는다" 를 잡았다.
+#   사주 리포트 한 편에서 오탐 8건이 났다.
+#
+# **거짓 경보는 진짜 경보를 죽인다.** 매번 8건이 뜨면 사람이 경고를 안 본다.
+#   그러니 조사가 붙은 자리에서만 잡는다. 앞에 한글이 오면 낱말의 일부다.
+_AMBIGUOUS = (
+    (re.compile(r"(?<![가-힣])암(?=[이을은과에서의]|\s|$)"), "암"),
+    (re.compile(r"(?<![가-힣])죽(?=[음는을었])"), "죽음"),
+)
+# 위 둘은 BANNED_TERMS 에서 빼고 여기서 본다
+_LITERAL_BANNED = tuple(t for t in PF.BANNED_TERMS if t not in ("암", "죽"))
+
+
+def banned_hits(text: str) -> list[str]:
+    """금칙어를 찾는다. 한 글자짜리는 문맥을 보고 판단한다."""
+    hits = [f"'{t}' 이(가) 포함됨" for t in _LITERAL_BANNED if t in text]
+    hits += [f"'{name}' 이(가) 포함됨" for rx, name in _AMBIGUOUS if rx.search(text)]
+    return hits
+
+
+# ─────────────────────────────────────────────
 # 검증
 # ─────────────────────────────────────────────
 @dataclass
@@ -200,9 +234,17 @@ def verify_report(text: str, *,
     """LLM 이 낸 리포트를 되받아 검사한다. 위반이 있으면 내보내지 않는다."""
     out: list[ReportViolation] = []
 
+    # 금칙어는 손금이 있든 없든 **언제나** 본다.
+    # 2026-09-09 이전에는 이 검사가 `palm is not None` 안에 있었다.
+    # 그래서 사주만 있는 리포트는 금칙어 검사를 한 번도 받지 않았다 —
+    # 「0건」이 「통과」가 아니라 「안 돌았다」였다.
+    out.extend(ReportViolation("금칙어", d) for d in banned_hits(text))
+
     if palm is not None:
+        # 관측되지 않은 선을 언급했는가 — 이건 손금이 있어야 볼 수 있다
         for v in PF.verify_output(text, palm):
-            out.append(ReportViolation(v.kind, v.detail))
+            if v.kind != "금칙어":      # 금칙어는 위에서 이미 봤다
+                out.append(ReportViolation(v.kind, v.detail))
 
     sentences = split_sentences(text)
     if not sentences:
