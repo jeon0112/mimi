@@ -7,3 +7,10 @@ __pycache__/
 voice_model/
 voice_ref/
 reference_audio/
+
+# 명식·사주 기록은 저장소에 올리지 않는다 (Public 저장소)
+# 남의 생년·명식이다. VPS 안에만 둔다
+myeongsik/
+*.myeongsik
+saju_records/
+*.saju.json
