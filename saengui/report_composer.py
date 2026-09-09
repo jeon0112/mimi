@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 import palm_features as PF
@@ -296,6 +297,56 @@ def forer_overlap(a: str, b: str) -> float:
 def _normalize(s: str) -> str:
     """비교용 정규화. 공백·문장부호 차이로 겹침을 놓치지 않는다."""
     return re.sub(r"[\s.,!?·…\"'“”‘’]", "", s)
+
+
+def material_citation(text: str,
+                      materials: "Sequence[str]") -> tuple[float, list[str]]:
+    """이 리포트가 **그 사람의 재료**를 실제로 몇 개나 인용했나. 0~1 과 빠진 목록.
+
+    ★ 왜 포러 겹침만으로는 부족한가 — 2026-09-09
+
+    비슷한 두 명식에서 겹침이 41~72% 로 나왔다. 템플릿 채우기다.
+    고치는 길은 「다시 쓰기」인데, **여기에 함정이 있다.**
+
+        LLM 에게 다시 쓰게 하면 겹침은 쉽게 내려간다. 표현만 바꾸면 된다.
+        **측정은 통과하는데 실제로는 나아지지 않는다.**
+
+    게이트를 통과하려고 최적화하는 것 — 우리가 계속 경계해 온 그것이다.
+
+    그래서 반대편에서 한 번 더 잰다.
+    **그 사람의 고유한 값이 본문에 실제로 나오는가.**
+
+        ✗  "결단한다"                   ← 경(庚) 이면 누구나 받는다
+        ✓  "금이 4.0 으로 몰려 있습니다"  ← 이 사람만 받는다
+
+    **표현을 바꿔서는 이 지표를 통과할 수 없다.** 재료를 읽어야 통과한다.
+
+    materials 에 넣을 것 (예) —
+        4주 간지 · 오행 수치 · 현재 대운 · 신강/신약 · 주요 십성 · 괘 이름
+
+    ★ **구절이 아니라 값을 넣는다.**
+        ✗  "금 4.0"   ← 본문이 "금이 4.0으로" 라고 쓰면 안 잡힌다
+        ✓  "4.0"  "경금"  "신강"  "을사"
+      값은 어떤 문장에 실려도 그대로 남는다. 구절은 조사 하나에 깨진다.
+    """
+    if not materials:
+        return 0.0, []
+    body = _normalize(text)
+    missing = [m for m in materials if _normalize(str(m)) not in body]
+    return (len(materials) - len(missing)) / len(materials), missing
+
+
+def material_verdict(text: str, materials: "Sequence[str]") -> tuple[float, str]:
+    """재료 인용률과 한 줄 설명. **아직 게이트로 걸지 않는다.**
+
+    임계값은 재본 뒤에 정한다. 근거 없이 숫자를 박으면
+    그 숫자가 어디서 왔는지 아무도 모르게 된다 (E-22 가 그렇게 났다).
+    """
+    ratio, missing = material_citation(text, materials)
+    if not materials:
+        return 0.0, "재료 목록이 비어 있다 — 잴 수 없다"
+    return ratio, (f"재료 인용 {ratio:.0%} ({len(materials)-len(missing)}/{len(materials)})"
+                   + (f" · 빠진 것: {', '.join(map(str, missing[:5]))}" if missing else ""))
 
 
 def forer_verdict(a: str, b: str) -> tuple[bool, str]:

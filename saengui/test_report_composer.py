@@ -232,6 +232,50 @@ results.append(check("근거 없는 시적 문장은 근거로 세지 않는다"
                      not _wrong, f"잘못 셈: {_wrong}" if _wrong else "3/3 걸러냄"))
 
 print()
+# ── 2026-09-09 추가 — 재료 인용. 표현만 바꿔서는 통과 못 한다 ──
+print()
+print("── 재료 인용 ──")
+
+_MAT_A = ["경금", "신강", "4.0", "을사", "기사", "편관"]
+_MAT_B = ["경금", "신강", "5.4", "계축", "병오", "편관"]
+_TEMPLATE  = "결단한다. 흐릿한 것을 잘라낸다. 베어내야 할 관계를 못 끊는다."
+_REWRITTEN = "끊어낼 것을 끊는다. 흐린 것을 정리한다. 정에 얽혀 못 자른다."
+_READS_A = ("기사년 경금 일간이 신강합니다. 금이 4.0 으로 몰려 있고 편관이 강합니다. "
+            "지금은 을사 대운입니다.")
+_READS_B = ("병오년 경금 일간이 신강합니다. 금이 5.4 로 더 두껍고 편관이 있습니다. "
+            "지금은 계축 대운입니다.")
+
+# ★ 함정 — 표현만 바꾸면 포러 겹침은 통과해 버린다
+_ok_forer, _ = RC.forer_verdict(_TEMPLATE, _REWRITTEN)
+results.append(check("표현만 바꾼 글이 포러 겹침을 통과해 버린다 (함정 확인)",
+                     _ok_forer, "겹침만 보면 속는다 — 그래서 재료 인용이 필요하다"))
+
+# 재료 인용은 표현을 바꿔도 안 속는다
+_r_tpl, _ = RC.material_citation(_TEMPLATE, _MAT_A)
+_r_rw, _ = RC.material_citation(_REWRITTEN, _MAT_A)
+results.append(check("템플릿·표현만 바꾼 글은 재료 인용 0%",
+                     _r_tpl == 0.0 and _r_rw == 0.0,
+                     f"템플릿 {_r_tpl:.0%} · 다시 쓴 것 {_r_rw:.0%}"))
+
+# 재료를 읽은 글은 통과한다
+_r_a, _miss_a = RC.material_citation(_READS_A, _MAT_A)
+_r_b, _ = RC.material_citation(_READS_B, _MAT_B)
+results.append(check("재료를 읽은 글은 재료 인용 100%",
+                     _r_a == 1.0 and _r_b == 1.0,
+                     f"A {_r_a:.0%} · B {_r_b:.0%}"))
+
+# ★ 재료를 읽으면 겹침도 자연히 내려간다 — 이게 설계의 핵심이다
+_ov = RC.forer_overlap(_READS_A, _READS_B)
+results.append(check("재료를 읽으면 포러 겹침도 함께 내려간다",
+                     _ov <= RC.MAX_FORER_OVERLAP,
+                     f"겹침 {_ov:.0%} — 겹침은 목표가 아니라 결과다"))
+
+# 빈 재료 목록을 조용히 통과시키지 않는다
+_r0, _msg0 = RC.material_verdict(_READS_A, [])
+results.append(check("재료 목록이 비면 「잴 수 없다」고 말한다",
+                     _r0 == 0.0 and "잴 수 없다" in _msg0, _msg0))
+
+print()
 print(f"{sum(results)}/{len(results)} 통과")
 print("=" * 70)
 print()
