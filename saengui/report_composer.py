@@ -34,6 +34,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 import palm_features as PF
+import self_reported_palm as SP
 import weights as W
 
 
@@ -61,6 +62,7 @@ class Composed:
 
 
 def compose(*, palm: PF.PalmFeatures | None = None,
+            self_palm: "SP.SelfReportedPalm | None" = None,
             relation=None,
             behavior_block: str | None = None,
             context_block: str | None = None) -> Composed:
@@ -68,7 +70,16 @@ def compose(*, palm: PF.PalmFeatures | None = None,
 
     없는 축은 넣지 않는다. 그리고 **무엇이 빠졌는지 결과에 남긴다** —
     빠진 축을 조용히 재분배하면 왜 그 해석이 나왔는지 나중에 설명할 수 없다.
+
+    `palm`(CV 측정)과 `self_palm`(본인이 고름)은 **같은 축을 채운다.**
+    둘 다 오면 거절한다 — 조용히 하나를 고르면 **어느 것이 쓰였는지
+    나중에 설명할 수 없다.** 우선순위를 정해 덮는 것도 같은 문제다.
     """
+    if palm is not None and self_palm is not None:
+        raise ValueError(
+            "측정 손금과 자기보고 손금이 둘 다 왔다. 하나만 보내라. "
+            "둘을 합치면 어느 것이 쓰였는지 리포트에서 설명할 수 없다.")
+
     available: set[str] = set()
     parts: list[str] = []
     key_parts: list[str] = [W.cache_key()]
@@ -93,6 +104,14 @@ def compose(*, palm: PF.PalmFeatures | None = None,
         parts.append(PF.to_prompt_block(palm))
         available.add("타고난지표")
         key_parts.append(PF.reading_key(palm))
+
+    if self_palm is not None:
+        # 자기보고도 같은 축(타고난지표)을 채운다. 무게는 낮추지 않는다 —
+        # 5% 를 3% 로 깎아봐야 읽는 사람은 모르고, "본인이 고른 것" 이라는
+        # 한 줄은 바로 안다. **숫자를 조용히 깎는 것보다 출처를 크게 밝힌다.**
+        parts.append(SP.to_prompt_block(self_palm))
+        available.add("타고난지표")
+        key_parts.append(SP.reading_key(self_palm))   # 접두사가 달라 캐시가 안 섞인다
 
     if not available:
         raise ValueError(
@@ -231,7 +250,9 @@ class ReportViolation:
 
 
 def verify_report(text: str, *,
-                  palm: PF.PalmFeatures | None = None) -> list[ReportViolation]:
+                  palm: PF.PalmFeatures | None = None,
+                  self_palm: "SP.SelfReportedPalm | None" = None
+                  ) -> list[ReportViolation]:
     """LLM 이 낸 리포트를 되받아 검사한다. 위반이 있으면 내보내지 않는다."""
     out: list[ReportViolation] = []
 
@@ -246,6 +267,14 @@ def verify_report(text: str, *,
         for v in PF.verify_output(text, palm):
             if v.kind != "금칙어":      # 금칙어는 위에서 이미 봤다
                 out.append(ReportViolation(v.kind, v.detail))
+
+    if self_palm is not None:
+        # 자기보고 판에는 검사가 하나 더 있다 — **끊김·갈래는 값 자체가 없다.**
+        # 측정 판에는 있는 재료라 LLM 이 흔히 지어낸다.
+        for line in SP.verify_output(text, self_palm):
+            kind, _, detail = line.partition(": ")
+            if kind != "금칙어":
+                out.append(ReportViolation(kind or "근거없음", detail or line))
 
     sentences = split_sentences(text)
     if not sentences:

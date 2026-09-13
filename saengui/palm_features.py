@@ -308,6 +308,21 @@ BANNED_TERMS = (
     "결혼할 나이", "이혼", "임신",
 )
 
+# ★ 2026-09-13 추가 — 예언은 「단어」가 아니라 「어미」로 온다.
+#
+# "올해 안에 결혼하시겠습니다" 는 위 목록을 하나도 안 건드리고 통과했다.
+# "결혼할 나이" 는 있는데 "결혼하시겠습니다" 가 없었기 때문이다.
+# 단어를 하나씩 늘려도 같은 구멍이 계속 생긴다 — 말하는 방식이 문제이기 때문이다.
+#
+# 그래서 **시점 표지 + 미래 단정 어미**가 한 문장에 같이 오면 잡는다.
+# 어느 한쪽만으로는 안 잡는다 — "올해도 그러셨겠지요" 를 잡으면 안 되고,
+# "이 자리는 오래 가는 자리로 보이겠습니다" 도 예언이 아니다.
+_FUTURE_MARKS = ("올해", "내년", "머지않아", "곧", "앞으로", "장차",
+                 "몇 년 안", "안에", "쯤에", "무렵")
+_FUTURE_ENDINGS = ("하시겠습니다", "되시겠습니다", "오시겠습니다", "생기시겠습니다",
+                   "들어오겠습니다", "할 것입니다", "될 것입니다", "옵니다",
+                   "하게 됩니다", "이루어집니다")
+
 
 @dataclass
 class Violation:
@@ -327,6 +342,14 @@ def verify_output(text: str, f: PalmFeatures) -> list[Violation]:
     for term in BANNED_TERMS:
         if term in text:
             out.append(Violation("금칙어", f"'{term}' 이(가) 포함됨"))
+
+    # 시점 표지와 미래 단정 어미가 같이 오면 예언이다 — 둘 다 있어야 잡는다
+    for sentence in text.replace("!", ".").replace("?", ".").split("."):
+        mark = next((m for m in _FUTURE_MARKS if m in sentence), None)
+        end = next((e for e in _FUTURE_ENDINGS if e in sentence), None)
+        if mark and end:
+            out.append(Violation(
+                "예언", f"'{mark}' + '{end}' — 시점을 못 박는 단정이다"))
 
     # 관측되지 않은 선을 언급했는가
     for name in ALL_LINES:

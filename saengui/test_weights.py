@@ -123,4 +123,9 @@ print("=" * 66)
 print()
 print(W.prompt_block({"행동", "맥락", "타고난지표"}))
 
-sys.exit(0 if all(results) else 1)
+
+# ★ 2026-09-13 — 이 줄이 모듈 최상위에 있으면 pytest 가 import 하는 순간
+#   SystemExit 으로 죽어 "no tests ran" 인데 종료코드 0 이 된다.
+#   「0개 통과」와 「N개 통과」가 같은 신호를 내면 감시는 눈이 없다.
+if __name__ == "__main__":
+    sys.exit(0 if all(results) else 1)
