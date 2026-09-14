@@ -87,7 +87,7 @@ def test_효배치():
     check("상괘가 운 셋에서 나온다 (다 음 → 坤)", allyang.upper() == "坤")
     check("★ 표기는 상괘가 앞이다 (E-338)", allyang.trigrams() == "坤/乾",
           "地天泰 11 — 하괘 명식이 뒤에 온다")
-    check("그 조합이 11 泰 다", H.match(allyang).number == 11)
+    check("그 조합이 11 泰 다", H.match(allyang, set(H.KNOWN)).number == 11)
 
 
 def test_전수():
@@ -116,20 +116,43 @@ def test_없는괘():
     # 巽/兌 = 61 中孚 — 데이터에 없다
     L = H.SajuLines(ilgan_yang=True, singang=True, month_warm=False,
                     daeun_forward=False, cheoneul=True, daeun_branch_yang=True)
-    m = H.match(L)
+    m = H.match(L, set(H.KNOWN))
     check("조합은 나온다", m.trigrams == "巽/兌")
     check("★ 글이 없으면 number 가 None 이다", m.number is None,
           "가까운 괘로 대신하지 않는다")
     check("covered 가 False 다", m.covered is False)
 
     # available 을 주면 그것을 쓴다
-    m2 = H.match(L, available={61})
+    m2 = H.match(L, {61})
     check("available 을 주면 그것으로 판정한다", m2.number == 61 and m2.covered)
+
+
+def test_available_필수():
+    print("\n[available] 기본값이 없다 — 낡은 표가 조용히 쓰이지 않는다")
+    # ★★★★★ 2026-09-14 — 여기가 실제로 당한 자리다 (E-488)
+    #   예전에는 available 이 선택이었고 기본값이 KNOWN 이었다.
+    #   그래서 데이터가 41괘가 되어도 37개짜리 표로 재어 71.7% 가 그대로 나왔다.
+    #   에러는 한 줄도 안 났다.
+    L = H.SajuLines(True, True, True, True, True, True)
+    for name, fn in (("match", lambda: H.match(L)), ("coverage", lambda: H.coverage())):
+        try:
+            fn()
+            check(f"★★ {name}() 를 available 없이 부르면 죽는다", False, "안 죽었다")
+        except TypeError:
+            check(f"★★ {name}() 를 available 없이 부르면 죽는다", True,
+                  "부르는 쪽이 「지금 무엇이 있나」를 대야 한다")
+
+    # ★ 그리고 available 이 늘면 덮임도 늘어야 한다 — 그때 안 늘었다
+    c37 = H.coverage(set(H.KNOWN))
+    c41 = H.coverage(set(H.KNOWN) | {18, 19, 22, 52})
+    check("★★★ available 이 늘면 덮임도 는다  (그때 안 늘었다)",
+          c41["글이_있는_조합"] == c37["글이_있는_조합"] + 4,
+          f"{c37['덮임']}% → {c41['덮임']}%")
 
 
 def test_덮임():
     print("\n[덮임] 숫자가 정직한가")
-    c = H.coverage()
+    c = H.coverage(set(H.KNOWN))
     check("37개가 덮인다", c["글이_있는_조합"] == 37)
     check("덮임 57.8%", c["덮임"] == 57.8, "37/64")
     check("빈 조합이 27개다", len(c["빈_조합"]) == 27)
@@ -143,7 +166,7 @@ def test_덮임():
 
 def _run_all():
     for fn in (test_8괘, test_64괘표, test_자가검증, test_효배치,
-               test_전수, test_없는괘, test_덮임):
+               test_전수, test_없는괘, test_available_필수, test_덮임):
         fn()
     print("\n" + "=" * 70)
     print(f"{sum(results)}/{len(results)} 통과")

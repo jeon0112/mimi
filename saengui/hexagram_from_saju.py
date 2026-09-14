@@ -92,11 +92,23 @@ NUMBER_BY_TRIGRAMS: dict[str, int] = {v: k for k, v in HEXAGRAM_TRIGRAMS.items()
 
 
 # ─────────────────────────────────────────────
-# ★ 자가 검증 — 데이터에서 실제로 본 것만 적는다
+# ★ 자가 검증용 표본 — 「표가 맞나」를 재는 데만 쓴다
 # ─────────────────────────────────────────────
 # 출처: 뭉클이가 iching_data.json 에서 원문으로 옮긴 목록
 #   · 2026-09-13 오전 (기존 24괘) · 오후 (추가 13괘, 37 家人 정정 포함)
-# ★★ 여기 없는 것은 「내가 본 적 없는 것」이다. 추측으로 채우지 않는다.
+#
+# 🔴 ★★★★★ 2026-09-14 — **이것은 「지금 데이터에 있는 괘」가 아니다.**
+#
+#   처음에 나는 이 표를 `coverage()` 와 `match()` 의 **기본값**으로 썼다.
+#   그래서 뭉클이가 괘 넷을 넣고 다시 쟀을 때 **71.7% 가 그대로 나왔다** —
+#   데이터는 41괘인데 이 표가 37개에 멈춰 있었기 때문이다.
+#   ★★ 그리고 **에러가 한 줄도 안 났다.**
+#
+#   ★★★★★ 오늘 아침 내가 쓴 그 줄이다 — **「에러 0건」은 「옳다」가 아니다**(E-374).
+#   나는 그 교훈으로 `_self_check` 를 만들었는데 **`coverage()` 에는 안 걸었다.**
+#
+#   → 그래서 `available` 을 **필수 인자로** 바꿨다. 부르는 쪽이
+#     **「지금 데이터에 무엇이 있나」를 반드시 대야 한다.** 기본값은 없다. (E-488)
 KNOWN: dict[int, str] = {
      1: "乾/乾",  2: "坤/坤",  3: "坎/震",  4: "艮/坎",  5: "坎/乾",  6: "乾/坎",
      7: "坤/坎", 11: "坤/乾", 12: "乾/坤", 13: "乾/離", 14: "離/乾", 15: "坤/艮",
@@ -173,29 +185,34 @@ class Match:
     #   ★★ 어제 배운 E-448(덮임에 두 수가 있고 섞으면 안 된다)과 같은 줄이다.
 
 
-def match(lines: SajuLines, *, available: set[int] | None = None) -> Match:
+def match(lines: SajuLines, available: set[int]) -> Match:
     """효 여섯 → 괘.
 
-    `available` 은 **지금 데이터에 글이 있는 괘 번호들**이다.
-    주지 않으면 `KNOWN` 을 쓴다 — 내가 실제로 본 것만.
+    `available` 은 **지금 데이터에 글이 있는 괘 번호들**이고 **필수다.**
+
+    ★★★★★ 기본값을 두지 않는다. 예전에는 `KNOWN` 을 기본값으로 썼는데,
+      **데이터가 늘어도 그 표는 안 늘어서 조용히 옛 숫자가 나왔다**(E-488).
+      **부르는 쪽이 「지금 무엇이 있나」를 대야 한다.**
 
     ★ 조합은 64가지가 다 나오지만, **글이 있는 것만 covered 다.**
       없는 자리를 가까운 괘로 메우지 않는다 — 그러면 덮임 숫자가 거짓말이 된다.
     """
     t = lines.trigrams()
     n = NUMBER_BY_TRIGRAMS[t]          # 조합은 반드시 64 중 하나다
-    have = available if available is not None else set(KNOWN)
-    return Match(trigrams=t, number=n if n in have else None,
-                 covered=n in have)
+    return Match(trigrams=t, number=n if n in available else None,
+                 covered=n in available)
 
 
-def coverage(available: set[int] | None = None) -> dict:
+def coverage(available: set[int]) -> dict:
     """조합 64 중 몇 개가 글을 가졌나. **덮임의 정직한 정의다.**
+
+    `available` 은 **필수다** — 이유는 `match()` 와 같다(E-488).
+    ★★ **데이터 파일에서 읽어 넘겨라.** 손으로 적은 표를 넘기면 그 표가 낡는다.
 
     ★ 이것은 「조합 기준」이다. 사람 기준 덮임(240판 중 몇 판)은 **다른 수**이고,
       그건 실제 명식 분포를 돌려야 나온다 (E-409: 42.5% = 102판/240판).
     """
-    have = available if available is not None else set(KNOWN)
+    have = available
     covered = sorted(n for n in HEXAGRAM_TRIGRAMS if n in have)
     return {
         "총_조합": 64,
