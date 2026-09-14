@@ -164,6 +164,13 @@ class Match:
     trigrams: str
     number: int | None      # ★ 데이터에 없으면 None. 가까운 괘로 대신하지 않는다
     covered: bool
+    path: str = "조합"      # ★ 어느 경로가 이 괘를 냈나 — 뭉클이 제안 (E-463)
+    #
+    # ★★★★★ 왜 표시를 남기나
+    #   컨텍스트 경로가 받은 판과 조합 경로가 받은 판이 섞이면
+    #   「조합 덮임 71.7%」와 「컨텍스트 비중」을 따로 셀 수 없다.
+    #   그러면 두 숫자가 한 문장에 섞여 읽히고, 그것이 E-144 였다.
+    #   ★★ 어제 배운 E-448(덮임에 두 수가 있고 섞으면 안 된다)과 같은 줄이다.
 
 
 def match(lines: SajuLines, *, available: set[int] | None = None) -> Match:
