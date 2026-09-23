@@ -39,5 +39,6 @@ jobs:
           path: |
             output/recommended_bids_*.json
             output/recommended_bids_*.xlsx
+            output/all_evaluations_*.json
           retention-days: 30
         if: always()

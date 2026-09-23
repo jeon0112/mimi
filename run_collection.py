@@ -69,8 +69,13 @@ def main():
         evaluations = ai_evaluate_bids(filtered)
 
         # 4. 추천 분류
+        # 「제외」와 「판정 누락」도 담는다 — 버리면 「제외가 맞았나」를 영원히 못 잰다.
+        # 거짓 추천은 사람이 한 번 보고 버리지만, 거짓 제외는 수의계약을 조용히 놓친다.
         recommended = []
         held = []
+        excluded = []   # AI 가 「제외」로 판정
+        unknown = []    # 판정은 왔으나 추천/보류/제외가 아닌 값
+        unjudged = []   # 판정 자체가 오지 않음 (배치 파싱 실패 등)
         for bid in filtered:
             eval_item = next(
                 (e for e in evaluations if e.get("공고번호") == bid["공고번호"]), None
@@ -81,11 +86,41 @@ def main():
                     recommended.append({**bid, "평가": eval_item})
                 elif status == "보류":
                     held.append({**bid, "평가": eval_item})
+                elif status == "제외":
+                    excluded.append({**bid, "평가": eval_item})
+                else:
+                    unknown.append({**bid, "평가": eval_item})
+            else:
+                unjudged.append({**bid, "평가": None})
 
         log(f"추천: {len(recommended)}건 / 보류: {len(held)}건")
+        # 분모를 남긴다 — 「추천 N건」만 보면 제외와 누락이 안 보인다
+        layers = len(recommended) + len(held) + len(excluded) + len(unknown) + len(unjudged)
+        log(
+            f"판정 층: 추천 {len(recommended)} / 보류 {len(held)} / 제외 {len(excluded)}"
+            f" / 판정이상 {len(unknown)} / 미판정 {len(unjudged)} / 합 {layers}"
+        )
+        if layers != len(filtered):
+            log(f"⚠️ 층 합({layers}) != 키워드 필터 후({len(filtered)}) — 어딘가 새고 있다")
+        if unjudged:
+            log(f"⚠️ 판정이 오지 않은 공고 {len(unjudged)}건 — 배치 응답을 확인할 것")
 
         # 5. 저장
         date_str = datetime.now().strftime("%Y%m%d")
+
+        # 5-0. 판정 전체 저장 (모든 층) — 추천이 0건이어도 남긴다.
+        # 층별 비율은 이 목록을 세서 낸다. 요약을 따로 저장하면 목록과 어긋난다.
+        all_eval = (
+            [{**b, "_층": "추천"} for b in recommended]
+            + [{**b, "_층": "보류"} for b in held]
+            + [{**b, "_층": "제외"} for b in excluded]
+            + [{**b, "_층": "판정이상"} for b in unknown]
+            + [{**b, "_층": "미판정"} for b in unjudged]
+        )
+        if all_eval:
+            all_path = os.path.join(OUTPUT_DIR, f"all_evaluations_{date_str}.json")
+            save_to_json(all_eval, all_path)
+            log(f"판정 전체 저장: {all_path} ({len(all_eval)}건)")
 
         if recommended or held:
             all_results = recommended + held
