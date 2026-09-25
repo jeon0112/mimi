@@ -70,6 +70,15 @@ def fetch_signal_emails() -> list[dict]:
             body = _extract_body(msg)
             parsed = _parse_signal(body)
             if parsed:
+                # ★★★★★ 블록 #44 반영 — confirm_send 는 본문이 아니라 헤더에서 읽는다.
+                # 뭉클이가 왕복 검증(조립 → 직렬화 → SMTP 전송 → 재파싱)까지
+                # 실측했다: X-Confirm-Send 헤더는 그 과정을 그대로 통과한다.
+                # 본문(사유 필드의 자유 텍스트)은 우연히 같은 단어가 들어갈 수
+                # 있어 오탐 위험이 있다 — 헌장 제1원칙(값을 본다, 설명이 아니라)
+                # 그대로다.
+                parsed["confirm_send"] = (
+                    msg.get("X-Confirm-Send", "").strip().lower() == "true"
+                )
                 signals.append(parsed)
     imap.logout()
     return signals
@@ -125,9 +134,9 @@ def _parse_signal(body: str) -> dict | None:
         "price": price,
         "amount": amount,
         "reason": g["reason"].strip(),
-        # ★★★★★ confirm_send 는 메일 본문이 아니라 메일 헤더의 별도 필드로
-        # 받는다(뭉클이의 X-Confirm-Send 헤더 제안 — 블록 #44 에서 확정).
-        # 그때까지는 무조건 False 로 취급한다 — 없으면 막는다.
+        # confirm_send 는 여기서 채우지 않는다 — fetch_signal_emails() 가
+        # 헤더(X-Confirm-Send)를 읽어 덮어쓴다. 없으면 False 가 기본이다
+        # (fail-closed) — 아래 .get() 이 그 기본값을 보장한다.
         "confirm_send": False,
     }
 
